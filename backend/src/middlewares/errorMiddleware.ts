@@ -52,7 +52,7 @@ export const errorHandler = (
   } else if (error instanceof mongoose.Error.CastError) {
     statusCode = 400;
     message = `Invalid ${error.path}: ${error.value}`;
-  } else if (error.name === 'MongoError' && (error as any).code === 11000) {
+  } else if (error.name === 'MongoServerError' && (error as any).code === 11000) {
     statusCode = 409;
     message = 'Duplicate key error';
     const field = Object.keys((error as any).keyValue)[0];
@@ -67,6 +67,12 @@ export const errorHandler = (
   } else if (error.name === 'SyntaxError' && 'body' in error) {
     statusCode = 400;
     message = 'Invalid JSON in request body';
+  } else if (error.name === 'MulterError') {
+    statusCode = 400;
+    message = 'File upload error';
+  } else if (error.name === 'TypeError' && error.message.includes('Cannot read property')) {
+    statusCode = 400;
+    message = 'Invalid request data';
   }
 
   // Send error response

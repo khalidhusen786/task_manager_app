@@ -1,6 +1,7 @@
 // ===== src/middleware/authMiddleware.ts =====
 import { Request, Response, NextFunction } from 'express';
 import { JWTUtil } from '../utils/jwt';
+import { CookieUtil } from '../utils/cookies';
 import { User } from '../models/User';
 import { AppError, AuthenticationError } from '../utils/errors';
 import { logger } from '../utils/logger';
@@ -27,8 +28,12 @@ export const authenticateToken = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    // Extract token from Authorization header
-    const token = JWTUtil.extractTokenFromHeader(req.headers.authorization);
+    // Try to extract token from cookie first, then from Authorization header
+    let token = CookieUtil.extractTokenFromCookie(req.headers.cookie, 'accessToken');
+    
+    if (!token) {
+      token = JWTUtil.extractTokenFromHeader(req.headers.authorization);
+    }
 
     if (!token) {
       throw new AuthenticationError('Access token required');
@@ -55,13 +60,15 @@ export const authenticateToken = async (
       email: user.email,
       endpoint: req.path,
       method: req.method,
+      authMethod: req.headers.cookie ? 'cookie' : 'header',
     });
 
     next();
   } catch (error) {
     logger.warn('Authentication failed', {
       error: error instanceof Error ? error.message : 'Unknown error',
-      token: req.headers.authorization ? 'present' : 'missing',
+      hasCookie: !!req.headers.cookie,
+      hasHeader: !!req.headers.authorization,
       ip: req.ip,
       userAgent: req.get('User-Agent'),
       endpoint: req.path,

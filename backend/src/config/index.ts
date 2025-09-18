@@ -12,8 +12,9 @@ const envSchema = Joi.object({
   RATE_LIMIT_WINDOW_MS: Joi.number().default(15 * 60 * 1000),
   RATE_LIMIT_MAX: Joi.number().default(100),
   ALLOWED_ORIGINS: Joi.string().default("http://localhost:3000"),
-  BCRYPT_SALT_ROUNDS: Joi.number().default(12), // Add this
-
+  BCRYPT_SALT_ROUNDS: Joi.number().default(12),
+  NODE_ENV: Joi.string().valid('development', 'production', 'test').default('development'),
+  COOKIE_SECRET: Joi.string().required(),
 }).unknown();
 
 const { value: env, error } = envSchema.validate(process.env, { abortEarly: false });
@@ -49,14 +50,15 @@ interface AppConfig {
   jwt: JWTConfig;
   rateLimit: RateLimitConfig;
   allowedOrigins: string[];
-  bcrypt: BcryptConfig; // Add this
-
+  bcrypt: BcryptConfig;
+  nodeEnv: string;
+  cookieSecret: string;
 }
 
 export const config: AppConfig = {
   port: env.PORT,
   mongodb: {
-    uri: env.MONGODB_URI,
+    uri: env.MONGODB_URI.replace('/test', '/task-manager-app'),
     options: {
       maxPoolSize: 10,
       serverSelectionTimeoutMS: 5000,
@@ -74,7 +76,8 @@ export const config: AppConfig = {
     max: env.RATE_LIMIT_MAX,
   },
   allowedOrigins: env.ALLOWED_ORIGINS.split(","),
-
+  nodeEnv: env.NODE_ENV,
+  cookieSecret: env.COOKIE_SECRET as string,
   bcrypt: {
     saltRounds: env.BCRYPT_SALT_ROUNDS, 
   },

@@ -2,6 +2,7 @@ console.log("Loading: server.js");
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
+import cookieParser from "cookie-parser";
 import mongoose from "mongoose";
 import morgan from "morgan";
 import rateLimit from "express-rate-limit";
@@ -14,23 +15,39 @@ import { errorHandler } from "./middlewares/errorMiddleware";
 const app = express();
 
 // --------- Middleware ---------
-app.use(helmet());
-app.use(cors({ origin: ["http://localhost:3000"], credentials: true }));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(morgan("dev"));
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'"],
+      imgSrc: ["'self'", "data:", "https:"],
+    },
+  },
+}));
+
+app.use(cors({
+  origin: config.allowedOrigins,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+}));
+
+app.use(cookieParser(config.cookieSecret));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(morgan(config.nodeEnv === 'production' ? 'combined' : 'dev'));
+
 app.use(rateLimit({
   windowMs: config.rateLimit.windowMs,
   max: config.rateLimit.max,
+  message: {
+    success: false,
+    message: 'Too many requests, please try again later.',
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
 }));
-
-// Routes
-app.use("/api/tasks", taskRoutes);
-
-// --------- Health check ---------
-app.get("/health", (req, res) => {
-  res.status(200).json({ success: true, message: "Server is healthy" });
-});
 
 // --------- Database connection ---------
 const connectDB = async () => {
@@ -45,20 +62,18 @@ const connectDB = async () => {
 
 connectDB();
 
+// --------- Routes ---------
 app.use("/api/auth", authRoutes);
-app.use("/api/task", taskRoutes);
-// Mounted under /api/tasks above
+app.use("/api/tasks", taskRoutes);
 
+// --------- Health check ---------
+app.get("/health", (req, res) => {
+  res.status(200).json({ success: true, message: "Server is healthy" });
+});
 
 // --------- Error handlers ---------
 app.use((req, res) => res.status(404).json({ success: false, message: "Not Found" }));
-app.use((err: any, req: any, res: any, next: any) => {
-  logger.error("Global Error:", err);
-  res.status(500).json({ success: false, message: "Internal Server Error" });
-});
-
-// Error middleware (last)
-// app.use(errorHandler);
+app.use(errorHandler);
 
 
 // --------- Start server ---------

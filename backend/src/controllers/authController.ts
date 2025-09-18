@@ -1,98 +1,123 @@
 // src/controllers/authController.ts
 import { Request, Response, NextFunction } from 'express';
 import { AuthService } from '../services/authService';
+import { CookieUtil } from '../utils/cookies';
+import { asyncHandler } from '../middlewares/errorMiddleware';
 import { logger } from '../utils/logger';
 
 export class AuthController {
   constructor(private authService: AuthService) {}
 
   // -------------------- REGISTER --------------------
-  register = async (req: Request, res: Response, next: NextFunction) => {
-      console.log("🔥 Register route hit", req.body);
+  register = asyncHandler(async (req: Request, res: Response) => {
+    const { name, email, password } = req.body;
+    const result = await this.authService.register({ name, email, password });
 
-    try {
-      const { name, email, password } = req.body;
-      const result = await this.authService.register({ name, email, password });
+    // Set secure HTTP-only cookies
+    CookieUtil.setAccessTokenCookie(res, result.accessToken);
+    CookieUtil.setRefreshTokenCookie(res, result.refreshToken);
 
-      logger.info('User registered successfully', { userId: result.user._id, email });
+    logger.info('User registered successfully', { userId: result.user._id, email });
 
-      res.status(201).json({
-        success: true,
-        message: 'User registered successfully',
-        data: result,
-      });
-    } catch (error) {
-      next(error);
-    }
-  };
+    res.status(201).json({
+      success: true,
+      message: 'User registered successfully',
+      data: {
+        user: result.user,
+        // Don't send tokens in response body for security
+      },
+    });
+  });
 
   // -------------------- LOGIN --------------------
-  login = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const { email, password } = req.body;
-      const result = await this.authService.login(email, password);
+  login = asyncHandler(async (req: Request, res: Response) => {
+    const { email, password } = req.body;
+    const result = await this.authService.login(email, password);
 
-      logger.info('User logged in successfully', { userId: result.user._id, email });
+    // Set secure HTTP-only cookies
+    CookieUtil.setAccessTokenCookie(res, result.accessToken);
+    CookieUtil.setRefreshTokenCookie(res, result.refreshToken);
 
-      res.json({
-        success: true,
-        message: 'Login successful',
-        data: result,
-      });
-    } catch (error) {
-      next(error);
-    }
-  };
+    logger.info('User logged in successfully', { userId: result.user._id, email });
+
+    res.json({
+      success: true,
+      message: 'Login successful',
+      data: {
+        user: result.user,
+        // Don't send tokens in response body for security
+      },
+    });
+  });
 
   // -------------------- REFRESH TOKEN --------------------
-  refreshToken = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const { refreshToken } = req.body;
-      const tokens = await this.authService.refreshToken(refreshToken);
-
-      res.json({
-        success: true,
-        message: 'Token refreshed successfully',
-        data: tokens,
-      });
-    } catch (error) {
-      next(error);
+  refreshToken = asyncHandler(async (req: Request, res: Response) => {
+    // Try to get refresh token from cookie first, then from body
+    let refreshToken = CookieUtil.extractTokenFromCookie(req.headers.cookie, 'refreshToken');
+    
+    if (!refreshToken) {
+      refreshToken = req.body.refreshToken;
     }
-  };
+
+    if (!refreshToken) {
+      throw new Error('Refresh token required');
+    }
+
+    const tokens = await this.authService.refreshToken(refreshToken);
+
+    // Set new tokens in cookies
+    CookieUtil.setAccessTokenCookie(res, tokens.accessToken);
+    CookieUtil.setRefreshTokenCookie(res, tokens.refreshToken);
+
+    res.json({
+      success: true,
+      message: 'Token refreshed successfully',
+      data: {
+        // Don't send tokens in response body for security
+      },
+    });
+  });
 
   // -------------------- LOGOUT --------------------
-  logout = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const userId = req.user?.id;
-      const { refreshToken } = req.body;
-
-      await this.authService.logout(userId!, refreshToken);
-
-      logger.info('User logged out', { userId });
-
-      res.json({
-        success: true,
-        message: 'Logout successful',
-      });
-    } catch (error) {
-      next(error);
+  logout = asyncHandler(async (req: Request, res: Response) => {
+    const userId = req.user?.id;
+    
+    // Try to get refresh token from cookie first, then from body
+    let refreshToken = CookieUtil.extractTokenFromCookie(req.headers.cookie, 'refreshToken');
+    
+    if (!refreshToken) {
+      refreshToken = req.body.refreshToken;
     }
-  };
+
+    if (userId && refreshToken) {
+      await this.authService.logout(userId, refreshToken);
+    }
+
+    // Clear authentication cookies
+    CookieUtil.clearAuthCookies(res);
+
+    logger.info('User logged out', { userId });
+
+    res.json({
+      success: true,
+      message: 'Logout successful',
+    });
+  });
 
   // -------------------- GET PROFILE --------------------
-  getProfile = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const userId = req.user?.id;
-      const user = await this.authService.getUserProfile(userId!);
-
-      res.json({
-        success: true,
-        data: user,
-      });
-    } catch (error) {
-      next(error);
+  getProfile = asyncHandler(async (req: Request, res: Response) => {
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new Error('User not authenticated');
     }
-  };
+    
+    const user = await this.authService.getUserProfile(userId);
+
+    res.json({
+      success: true,
+      data: user,
+    });
+  });
 
 
 }
