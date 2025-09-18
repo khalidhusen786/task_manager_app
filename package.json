@@ -1,0 +1,9 @@
+{
+  "devDependencies": {
+    "@types/winston": "^2.4.4"
+  },
+  "dependencies": {
+    "joi": "^18.0.1",
+    "zod": "^4.1.9"
+  }
+}
