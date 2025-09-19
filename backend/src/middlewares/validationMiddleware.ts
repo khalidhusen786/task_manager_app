@@ -19,19 +19,19 @@ export const validate = (schema: {
       // Validate request body
       if (schema.body) {
         validationResults.body = schema.body.parse(req.body);
-        req.body = validationResults.body;
+        Object.assign(req.body as any, validationResults.body);
       }
 
       // Validate request params
       if (schema.params) {
         validationResults.params = schema.params.parse(req.params);
-        req.params = validationResults.params;
+        Object.assign(req.params as any, validationResults.params);
       }
 
       // Validate request query
       if (schema.query) {
         validationResults.query = schema.query.parse(req.query);
-        req.query = validationResults.query;
+        Object.assign(req.query as any, validationResults.query);
       }
 
       logger.debug('Request validation successful', {

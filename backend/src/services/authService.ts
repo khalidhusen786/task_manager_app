@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import { User, IUser } from '../models/User';
 import { config } from '../config';
 import { AppError } from '../utils/errors';
+import { JWTUtil } from '../utils/jwt';
 console.log("auth services started")
 
 
@@ -91,19 +92,8 @@ export class AuthService {
 
   // -------- PRIVATE: GENERATE TOKENS --------
   private generateTokens(userId: string): { accessToken: string; refreshToken: string } {
-    const payload = { userId };
-    
-    const accessToken = jwt.sign(
-      payload,
-      config.jwt.secret,
-      { expiresIn: config.jwt.accessTokenExpiry as import('jsonwebtoken').SignOptions['expiresIn'] }
-    );
-    
-    const refreshToken = jwt.sign(
-      payload,
-      config.jwt.refreshSecret,
-      { expiresIn: config.jwt.refreshTokenExpiry as import('jsonwebtoken').SignOptions['expiresIn'] }
-    );
+    const accessToken = JWTUtil.generateAccessToken(userId);
+    const refreshToken = JWTUtil.generateRefreshToken(userId);
     
     return { accessToken, refreshToken };
   }

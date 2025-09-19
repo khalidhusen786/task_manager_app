@@ -4,7 +4,7 @@ import { TaskController } from '../controllers/taskController';
 import { TaskService } from '../services/taskService';
 import { authenticateToken } from '../middlewares/authMiddleware';
 import { validate, commonSchemas } from '../middlewares/validationMiddleware';
-import { createTaskSchema, updateTaskSchema, taskFiltersSchema, bulkIdsSchema, bulkUpdateSchema } from '../schemas/taskSchemas';
+import { createTaskSchema, updateTaskSchema, taskFiltersSchema, bulkIdsSchema } from '../schemas/taskSchemas';
 import rateLimit from 'express-rate-limit';
 import { z } from 'zod';
 
@@ -80,31 +80,6 @@ router.put('/:id',
   taskController.updateTask
 );
 
-/**
- * @route   PATCH /api/tasks/:id/status
- * @desc    Update task status only
- * @access  Private
- */
-router.patch('/:id/status', 
-  validate({ 
-    params: commonSchemas.mongoId,
-    body: updateTaskSchema.pick({ status: true })
-  }), 
-  taskController.updateTaskStatus
-);
-
-/**
- * @route   PATCH /api/tasks/:id/priority
- * @desc    Update task priority only
- * @access  Private
- */
-router.patch('/:id/priority', 
-  validate({ 
-    params: commonSchemas.mongoId,
-    body: updateTaskSchema.pick({ priority: true })
-  }), 
-  taskController.updateTaskPriority
-);
 
 /**
  * @route   DELETE /api/tasks/:id
@@ -126,14 +101,5 @@ router.delete('/',
   taskController.deleteManyTasks
 );
 
-/**
- * @route   PATCH /api/tasks/bulk-update
- * @desc    Bulk update tasks (status, priority, etc.)
- * @access  Private
- */
-router.patch('/bulk-update', 
-  validate({ body: bulkUpdateSchema }), 
-  taskController.bulkUpdateTasks
-);
 
 export default router;

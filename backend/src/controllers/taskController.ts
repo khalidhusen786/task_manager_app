@@ -132,43 +132,6 @@ export class TaskController {
     });
   });
 
-  updateTaskStatus = asyncHandler(async (req: Request, res: Response) => {
-    const { id } = req.params;
-    const userId = req.user?.id;
-    if (!userId) {
-      throw new Error('User not authenticated');
-    }
-    const { status } = req.body;
-
-    const task = await this.taskService.updateTaskStatus(id, userId, status);
-
-    logger.info('Task status updated successfully', { taskId: id, userId, status });
-
-    res.json({
-      success: true,
-      message: 'Task status updated successfully',
-      data: task,
-    });
-  });
-
-  updateTaskPriority = asyncHandler(async (req: Request, res: Response) => {
-    const { id } = req.params;
-    const userId = req.user?.id;
-    if (!userId) {
-      throw new Error('User not authenticated');
-    }
-    const { priority } = req.body;
-
-    const task = await this.taskService.updateTaskPriority(id, userId, priority);
-
-    logger.info('Task priority updated successfully', { taskId: id, userId, priority });
-
-    res.json({
-      success: true,
-      message: 'Task priority updated successfully',
-      data: task,
-    });
-  });
 
   deleteManyTasks = asyncHandler(async (req: Request, res: Response) => {
     const userId = req.user?.id;
@@ -183,16 +146,4 @@ export class TaskController {
     res.json({ success: true, message: 'Tasks deleted successfully', deletedCount });
   });
 
-  bulkUpdateTasks = asyncHandler(async (req: Request, res: Response) => {
-    const userId = req.user?.id;
-    if (!userId) {
-      throw new Error('User not authenticated');
-    }
-    const { taskIds, updates } = req.body as { taskIds: string[]; updates: any };
-    const modifiedCount = await this.taskService.bulkUpdateTasks(userId, taskIds, updates);
-
-    logger.info('Tasks updated successfully', { userId, count: modifiedCount });
-
-    res.json({ success: true, message: 'Tasks updated successfully', modifiedCount });
-  });
 }

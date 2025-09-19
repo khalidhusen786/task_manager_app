@@ -172,33 +172,6 @@ export class TaskService {
     };
   }
 
-  async updateTaskStatus(taskId: string, userId: string, status: TaskStatus): Promise<ITask> {
-    const task = await Task.findOneAndUpdate(
-      { _id: taskId, userId: new mongoose.Types.ObjectId(userId) },
-      { status },
-      { new: true, runValidators: true }
-    );
-
-    if (!task) {
-      throw new AppError('Task not found', 404);
-    }
-
-    return task;
-  }
-
-  async updateTaskPriority(taskId: string, userId: string, priority: TaskPriority): Promise<ITask> {
-    const task = await Task.findOneAndUpdate(
-      { _id: taskId, userId: new mongoose.Types.ObjectId(userId) },
-      { priority },
-      { new: true, runValidators: true }
-    );
-
-    if (!task) {
-      throw new AppError('Task not found', 404);
-    }
-
-    return task;
-  }
 
   async deleteManyTasks(userId: string, taskIds: string[]): Promise<number> {
     const result = await Task.deleteMany({
@@ -208,15 +181,4 @@ export class TaskService {
     return result.deletedCount || 0;
   }
 
-  async bulkUpdateTasks(
-    userId: string,
-    taskIds: string[],
-    updates: Partial<Pick<ITask, 'status' | 'priority'>>
-  ): Promise<number> {
-    const result = await Task.updateMany(
-      { _id: { $in: taskIds }, userId: new mongoose.Types.ObjectId(userId) },
-      { $set: updates }
-    );
-    return result.modifiedCount || 0;
-  }
 }

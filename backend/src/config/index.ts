@@ -9,7 +9,7 @@ const envSchema = Joi.object({
   MONGODB_URI: Joi.string().uri().required(),
   JWT_SECRET: Joi.string().required(),
   JWT_REFRESH_SECRET: Joi.string().required(),
-  RATE_LIMIT_WINDOW_MS: Joi.number().default(15 * 60 * 1000),
+  RATE_LIMIT_WINDOW_MS: Joi.number().default(2 * 60 * 1000),
   RATE_LIMIT_MAX: Joi.number().default(100),
   ALLOWED_ORIGINS: Joi.string().default("http://localhost:3000"),
   BCRYPT_SALT_ROUNDS: Joi.number().default(12),

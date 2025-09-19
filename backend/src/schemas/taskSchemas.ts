@@ -28,7 +28,3 @@ export const bulkIdsSchema = z.object({
     .max(50, 'Cannot operate on more than 50 tasks at once')
 });
 
-export const bulkUpdateSchema = z.object({
-  taskIds: bulkIdsSchema.shape.taskIds,
-  updates: updateTaskSchema.pick({ status: true, priority: true })
-});
