@@ -172,7 +172,7 @@ vercel --prod
 ```
 
 ### Automatic Deployment
-- Push to `main` branch triggers automatic deployment
+- Push to `master` branch triggers automatic deployment
 - GitHub Actions handles the deployment process
 - Both Railway and Vercel support GitHub integration
 
