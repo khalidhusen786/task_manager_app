@@ -1,76 +1,77 @@
-// ===== TOAST PROVIDER =====
-import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import React, { createContext, useContext, useState, ReactNode } from 'react';
 
-type ToastType = 'success' | 'error' | 'warning' | 'info';
-
-export interface ToastItem {
+interface Toast {
   id: string;
-  type: ToastType;
   message: string;
-  duration?: number; // ms
+  type: 'success' | 'error' | 'warning' | 'info';
+  duration?: number;
 }
 
-interface ToastContextValue {
-  addToast: (toast: Omit<ToastItem, 'id'>) => void;
+interface ToastContextType {
+  toasts: Toast[];
+  addToast: (toast: Omit<Toast, 'id'>) => void;
+  removeToast: (id: string) => void;
 }
 
-const ToastContext = createContext<ToastContextValue | undefined>(undefined);
+const ToastContext = createContext<ToastContextType | undefined>(undefined);
 
-export const useToast = (): ToastContextValue => {
-  const ctx = useContext(ToastContext);
-  if (!ctx) throw new Error('useToast must be used within ToastProvider');
-  return ctx;
-};
+interface ToastProviderProps {
+  children: ReactNode;
+}
 
-const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [toasts, setToasts] = useState<ToastItem[]>([]);
+export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
+  const [toasts, setToasts] = useState<Toast[]>([]);
 
-  const remove = useCallback((id: string) => {
-    setToasts((prev) => prev.filter((t) => t.id !== id));
-  }, []);
+  const addToast = (toast: Omit<Toast, 'id'>) => {
+    const id = Math.random().toString(36).substr(2, 9);
+    const newToast = { ...toast, id };
+    
+    setToasts(prev => [...prev, newToast]);
 
-  const addToast = useCallback((toast: Omit<ToastItem, 'id'>) => {
-    const id = Math.random().toString(36).slice(2);
-    const item: ToastItem = { id, ...toast };
-    setToasts((prev) => [...prev, item]);
-    const duration = toast.duration ?? (toast.type === 'error' ? 5000 : 3000);
-    window.setTimeout(() => remove(id), duration);
-  }, [remove]);
+    // Auto remove toast after duration
+    setTimeout(() => {
+      removeToast(id);
+    }, toast.duration || 5000);
+  };
 
-  const value = useMemo(() => ({ addToast }), [addToast]);
+  const removeToast = (id: string) => {
+    setToasts(prev => prev.filter(toast => toast.id !== id));
+  };
 
   return (
-    <ToastContext.Provider value={value}>
+    <ToastContext.Provider value={{ toasts, addToast, removeToast }}>
       {children}
-      {/* Container */}
-      <div className="fixed top-4 right-4 z-[60] space-y-2">
-        {toasts.map((t) => (
-          <Toast key={t.id} type={t.type} message={t.message} onClose={() => remove(t.id)} />)
-        )}
+      <div className="fixed top-4 right-4 z-50 space-y-2">
+        {toasts.map(toast => (
+          <div
+            key={toast.id}
+            className={`p-4 rounded-md shadow-lg max-w-md ${
+              toast.type === 'success' ? 'bg-green-100 text-green-800' :
+              toast.type === 'error' ? 'bg-red-100 text-red-800' :
+              toast.type === 'warning' ? 'bg-yellow-100 text-yellow-800' :
+              'bg-blue-100 text-blue-800'
+            }`}
+          >
+            <div className="flex justify-between items-center">
+              <span>{toast.message}</span>
+              <button
+                onClick={() => removeToast(toast.id)}
+                className="ml-2 text-gray-500 hover:text-gray-700"
+              >
+                ×
+              </button>
+            </div>
+          </div>
+        ))}
       </div>
     </ToastContext.Provider>
   );
 };
 
-const Toast: React.FC<{ type: ToastType; message: string; onClose: () => void }> = ({ type, message, onClose }) => {
-  const styles: Record<ToastType, string> = {
-    success: 'bg-green-50 text-green-800 border-green-200',
-    error: 'bg-red-50 text-red-800 border-red-200',
-    warning: 'bg-yellow-50 text-yellow-800 border-yellow-200',
-    info: 'bg-blue-50 text-blue-800 border-blue-200',
-  };
-  return (
-    <div className={`rounded-md border px-4 py-3 shadow-sm ${styles[type]} min-w-[260px] max-w-sm`}> 
-      <div className="flex items-start justify-between space-x-4">
-        <p className="text-sm leading-5">{message}</p>
-        <button onClick={onClose} className="text-current/60 hover:text-current">✕</button>
-      </div>
-    </div>
-  );
+export const useToast = () => {
+  const context = useContext(ToastContext);
+  if (context === undefined) {
+    throw new Error('useToast must be used within a ToastProvider');
+  }
+  return context;
 };
-
-export default ToastProvider;
-
-
-
-
