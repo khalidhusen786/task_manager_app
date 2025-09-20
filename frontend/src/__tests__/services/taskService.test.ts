@@ -248,8 +248,8 @@ describe('TaskService', () => {
     it('should handle task not found', async () => {
       try {
         await taskService.getTask('999');
-      } catch (error: any) {
-        expect(error.message).toContain('404');
+      } catch (error: unknown) {
+        expect((error as Error).message).toContain('404');
       }
     });
   });
@@ -280,8 +280,8 @@ describe('TaskService', () => {
 
       try {
         await taskService.createTask(invalidTaskData);
-      } catch (error: any) {
-        expect(error.message).toContain('400');
+      } catch (error: unknown) {
+        expect((error as Error).message).toContain('400');
       }
     });
   });
@@ -304,8 +304,8 @@ describe('TaskService', () => {
     it('should handle task not found during update', async () => {
       try {
         await taskService.updateTask('999', { title: 'Updated' });
-      } catch (error: any) {
-        expect(error.message).toContain('404');
+      } catch (error: unknown) {
+        expect((error as Error).message).toContain('404');
       }
     });
   });
@@ -321,8 +321,8 @@ describe('TaskService', () => {
     it('should handle task not found during deletion', async () => {
       try {
         await taskService.deleteTask('999');
-      } catch (error: any) {
-        expect(error.message).toContain('404');
+      } catch (error: unknown) {
+        expect((error as Error).message).toContain('404');
       }
     });
   });
