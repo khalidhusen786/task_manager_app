@@ -77,15 +77,23 @@ npm install
 
 3. **Environment Setup**:
 ```bash
-# Backend environment
+# Backend environment (Development)
 cd backend
-cp .env.example .env
-# Edit .env with your MongoDB URI and JWT secrets
+cp env.example .env.development
+# Edit .env.development with your MongoDB URI and JWT secrets
 
-# Frontend environment
+# Backend environment (Production)
+cp env.example .env.production
+# Edit .env.production with production values
+
+# Frontend environment (Development)
 cd ../frontend
-cp .env.example .env
-# Edit .env with your API base URL
+cp env.example .env.development
+# Edit .env.development with your API base URL
+
+# Frontend environment (Production)
+cp env.example .env.production
+# Edit .env.production with production API URL
 ```
 
 4. **Start the application**:
@@ -192,30 +200,59 @@ task-manager-app/
 ## 🔧 Configuration
 
 ### Backend Configuration
+
+#### Development (.env.development)
 ```env
-# Database
-MONGODB_URI=mongodb://localhost:27017/task-manager
-
-# JWT Secrets
-JWT_SECRET=your-jwt-secret
-JWT_REFRESH_SECRET=your-refresh-secret
-
-# Server
-PORT=5000
 NODE_ENV=development
-
-# Rate Limiting
+PORT=5000
+MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/taskmanager
+JWT_SECRET=your-development-jwt-secret
+JWT_REFRESH_SECRET=your-development-refresh-secret
+JWT_ACCESS_EXPIRY=15m
+JWT_REFRESH_EXPIRY=7d
+BCRYPT_SALT_ROUNDS=12
+ALLOWED_ORIGINS=http://localhost:3000
 RATE_LIMIT_WINDOW_MS=900000
 RATE_LIMIT_MAX=100
+LOG_LEVEL=debug
+```
 
-# CORS
-ALLOWED_ORIGINS=http://localhost:3000
+#### Production (.env.production)
+```env
+NODE_ENV=production
+PORT=5000
+MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/taskmanager
+JWT_SECRET=your-production-jwt-secret
+JWT_REFRESH_SECRET=your-production-refresh-secret
+JWT_ACCESS_EXPIRY=15m
+JWT_REFRESH_EXPIRY=7d
+BCRYPT_SALT_ROUNDS=12
+ALLOWED_ORIGINS=https://your-frontend.vercel.app
+RATE_LIMIT_WINDOW_MS=900000
+RATE_LIMIT_MAX=100
+LOG_LEVEL=info
 ```
 
 ### Frontend Configuration
+
+#### Development (.env.development)
 ```env
+VITE_NODE_ENV=development
 VITE_API_BASE_URL=http://localhost:5000/api
 VITE_APP_NAME=Task Manager
+VITE_APP_VERSION=1.0.0
+VITE_DEBUG=true
+VITE_LOG_LEVEL=debug
+```
+
+#### Production (.env.production)
+```env
+VITE_NODE_ENV=production
+VITE_API_BASE_URL=https://your-backend.railway.app/api
+VITE_APP_NAME=Task Manager
+VITE_APP_VERSION=1.0.0
+VITE_DEBUG=false
+VITE_LOG_LEVEL=error
 ```
 
 ## 🎯 API Endpoints
@@ -301,75 +338,125 @@ npm run build
 # Deploy dist/ folder to your hosting service
 ```
 
-### Docker Deployment
+## 🐳 Docker Deployment
+
+### Prerequisites
+- Docker and Docker Compose installed
+- Git (to clone the repository)
+
+### Quick Start with Docker Compose
+1. **Clone and setup**:
+   ```bash
+   git clone <repository-url>
+   cd task-manager-app
+   ```
+
+2. **Create environment file**:
+   ```bash
+   cp .env.example .env
+   # Edit .env with your production values
+   ```
+
+3. **Start all services**:
+   ```bash
+   docker-compose up -d
+   ```
+
+4. **Check service health**:
+   ```bash
+   docker-compose ps
+   docker-compose logs -f
+   ```
+
+### Individual Docker Builds
 ```bash
-# Build and run with Docker Compose
-docker-compose up --build
+# Backend
+cd backend
+docker build -t task-manager-backend .
+docker run -p 5000:5000 \
+  -e MONGODB_URI=mongodb://localhost:27017/taskmanager \
+  -e JWT_SECRET=your-secret \
+  task-manager-backend
+
+# Frontend
+cd frontend
+docker build -t task-manager-frontend .
+docker run -p 3000:3000 task-manager-frontend
 ```
 
-## 🔧 Development Tools
+### Docker Compose Services
+- **Frontend**: React app served by Nginx (Port 3000)
+- **Backend**: Node.js API server (Port 5000)
+- **MongoDB**: Database with authentication (Port 27017)
 
-- **ESLint**: Code linting and formatting
-- **Prettier**: Code formatting
-- **TypeScript**: Type checking
-- **Jest**: Testing framework
-- **MSW**: API mocking for tests
-- **Nodemon**: Development server auto-restart
+## 🚀 Production Deployment
 
-## 📚 Documentation
+### Cloud Platform Deployment
 
-- **API Documentation**: Comprehensive API endpoint documentation
-- **Component Documentation**: React component documentation
-- **Database Schema**: MongoDB collection schemas
-- **Deployment Guide**: Step-by-step deployment instructions
+#### Railway
+1. Connect your GitHub repository to Railway
+2. Set environment variables in Railway dashboard
+3. Deploy automatically on push to main branch
 
-## 🤝 Contributing
+#### Heroku
+1. Create Heroku apps for frontend and backend
+2. Add MongoDB Atlas addon
+3. Set environment variables
+4. Deploy using Heroku CLI or GitHub integration
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+#### Vercel (Frontend) + Railway (Backend)
+1. Deploy frontend to Vercel
+2. Deploy backend to Railway
+3. Update frontend environment variables
 
-### Development Guidelines
-- Follow TypeScript best practices
-- Write comprehensive tests
-- Update documentation
-- Follow the existing code style
-- Ensure all tests pass
+### Environment Variables for Production
+```env
+# Backend
+NODE_ENV=production
+MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/taskmanager
+JWT_SECRET=your-super-secure-jwt-secret
+JWT_REFRESH_SECRET=your-super-secure-refresh-secret
+ALLOWED_ORIGINS=https://your-frontend-domain.com
 
-## 📄 License
+# Frontend
+VITE_API_BASE_URL=https://your-backend-domain.com/api
+VITE_NODE_ENV=production
+```
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+## 🔄 CI/CD Pipeline
 
-## 🆘 Support
+### GitHub Actions
+The repository includes GitHub Actions workflows for:
+- **Automated Testing**: Runs on every push and PR
+- **Docker Build**: Builds and pushes Docker images
+- **Security Scanning**: Vulnerability scanning with Trivy
+- **Deployment**: Automated deployment to production
 
-For support and questions:
-- Create an issue in the repository
-- Check the documentation
-- Review the test cases for examples
-- Contact the development team
+### Workflow Files
+- `.github/workflows/ci-cd.yml` - Main CI/CD pipeline
+- `.github/workflows/docker-deploy.yml` - Docker deployment
 
-## 🔄 Version History
+### Required Secrets
+Set these in your GitHub repository settings:
+- `JWT_SECRET` - JWT signing secret
+- `JWT_REFRESH_SECRET` - JWT refresh secret
+- `RAILWAY_TOKEN` - Railway deployment token (if using Railway)
 
-- **v1.0.0**: Initial release with core features
-- **v1.1.0**: Added advanced filtering and search
-- **v1.2.0**: Performance optimizations and caching
-- **v1.3.0**: Enhanced UI/UX and accessibility
-- **v1.4.0**: Comprehensive testing suite
-- **v1.5.0**: Client-side filtering optimization
+## 📊 Monitoring and Health Checks
 
-## 🎯 Roadmap
+### Health Endpoints
+- Backend: `GET /api/health`
+- Frontend: `GET /health`
 
-- [ ] Real-time collaboration
-- [ ] Task templates
-- [ ] Advanced reporting
-- [ ] Mobile app
-- [ ] Third-party integrations
-- [ ] Advanced analytics
-- [ ] Team management
-- [ ] File attachments
+### Docker Health Checks
+All services include health checks for monitoring:
+```bash
+# Check container health
+docker-compose ps
+docker inspect <container-name> | grep Health -A 10
+```
 
----
-
-Built with ❤️ using modern web technologies and best practices.
+### Logging
+- Backend: Winston logger with structured logging
+- Frontend: Console logging with error boundaries
+- Docker: Centralized logging with docker-compose logs

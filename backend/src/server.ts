@@ -10,6 +10,7 @@ import { config } from "./config";
 import { logger } from "./utils/logger";
 import authRoutes from "./routes/authRoutes";
 import taskRoutes from "./routes/taskRoutes";
+import healthRoutes from "./routes/healthRoutes";
 import { errorHandler } from "./middlewares/errorMiddleware";
 
 const app = express();
@@ -65,11 +66,7 @@ connectDB();
 // --------- Routes ---------
 app.use("/api/auth", authRoutes);
 app.use("/api/tasks", taskRoutes);
-
-// --------- Health check ---------
-app.get("/health", (req, res) => {
-  res.status(200).json({ success: true, message: "Server is healthy" });
-});
+app.use("/api/health", healthRoutes);
 
 // --------- Error handlers ---------
 app.use((req, res) => res.status(404).json({ success: false, message: "Not Found" }));
