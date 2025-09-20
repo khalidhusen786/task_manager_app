@@ -7,8 +7,8 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies (including dev dependencies for build)
-RUN npm ci
+# Install all dependencies (including dev dependencies for build)
+RUN npm ci --include=dev
 
 # Copy source code
 COPY . .
@@ -16,7 +16,7 @@ COPY . .
 # Build TypeScript
 RUN npm run build
 
-# Remove dev dependencies
+# Remove dev dependencies after successful build
 RUN npm prune --production
 
 # Create non-root user
