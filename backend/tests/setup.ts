@@ -1,4 +1,8 @@
 // Test setup and configuration
+import dotenv from "dotenv";
+
+// Load test environment variables
+dotenv.config();
 import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { config } from '../src/config';
