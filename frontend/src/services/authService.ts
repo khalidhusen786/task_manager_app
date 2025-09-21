@@ -30,21 +30,24 @@ class AuthService {
     return apiService.post('/auth/logout');
   }
 
-  async refreshToken(): Promise<ApiResponse<RefreshResponse>> {
-    // Get refresh token from cookie if available
-    const refreshToken = document.cookie
-      .split('; ')
-      .find(row => row.startsWith('refreshToken='))
-      ?.split('=')[1];
+  // async refreshToken(): Promise<ApiResponse<RefreshResponse>> {
+  //   // Get refresh token from cookie if available
+  //   const refreshToken = document.cookie
+  //     .split('; ')
+  //     .find(row => row.startsWith('refreshToken='))
+  //     ?.split('=')[1];
     
-    // If no refresh token is available, throw an error to stop the loop
-    if (!refreshToken) {
-      throw new Error('No refresh token available');
-    }
+  //   // If no refresh token is available, throw an error to stop the loop
+  //   if (!refreshToken) {
+  //     throw new Error('No refresh token available');
+  //   }
     
-    return apiService.post('/auth/refresh-token', {
-      refreshToken: refreshToken
-    });
+  //   return apiService.post('/auth/refresh-token', {
+  //     refreshToken: refreshToken
+  //   });
+  // }
+    async refreshToken(): Promise<ApiResponse> {
+    return apiService.post('/auth/refresh-token'); // no body
   }
 
   async getProfile(): Promise<ApiResponse<User>> {

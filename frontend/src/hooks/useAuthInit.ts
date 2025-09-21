@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAppDispatch, useAppSelector } from './useAppDispatch';
 import { getUserProfile, clearUser, setAuthFromPersist } from '../store/slices/authSlice';
-
 export const useAuthInit = () => {
   const dispatch = useAppDispatch();
   const [initialized, setInitialized] = useState(false);
@@ -12,23 +11,21 @@ export const useAuthInit = () => {
     hasRun.current = true;
 
     const checkAuth = async () => {
-      // Wait for persist
-      await new Promise(r => setTimeout(r, 200));
-      
-      const hasTokens = document.cookie.includes('accessToken') || 
-                       document.cookie.includes('refreshToken');
+      const hasTokens = document.cookie.includes('accessToken') || document.cookie.includes('refreshToken');
 
-      if (hasTokens) {
-        try {
-          await dispatch(getUserProfile()).unwrap();
-        } catch (error) {
-          dispatch(clearUser());
-        }
-      } else {
+      if (!hasTokens) {
         dispatch(clearUser());
+        setInitialized(true);
+        return;
       }
-      
-      setInitialized(true);
+
+      try {
+        await dispatch(getUserProfile()).unwrap();
+      } catch {
+        dispatch(clearUser());
+      } finally {
+        setInitialized(true);
+      }
     };
 
     checkAuth();
@@ -36,3 +33,4 @@ export const useAuthInit = () => {
 
   return initialized;
 };
+
