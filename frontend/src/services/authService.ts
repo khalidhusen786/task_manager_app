@@ -1,6 +1,6 @@
 // ===== AUTH SERVICE =====
 import apiService from './api';
-import type { User, LoginFormData, RegisterFormData, ApiResponse } from '../types';
+import type { User, LoginFormData, RegisterFormData, ApiResponse, RegisterApiPayload } from '../types';
 
 export interface AuthResponse {
   user: User;
@@ -11,7 +11,7 @@ export interface RefreshResponse {
 }
 
 class AuthService {
-  async register(data: RegisterFormData): Promise<ApiResponse<AuthResponse>> {
+  async register(data: RegisterApiPayload): Promise<ApiResponse<AuthResponse>> {
     return apiService.post('/auth/register', {
       name: data.name,
       email: data.email,
