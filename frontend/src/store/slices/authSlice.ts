@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import type { User, AuthState, LoginFormData, RegisterFormData, RegisterApiPayload } from '../../types';
 import authService from '../../services/authService';
+import { apiUtils } from '../../utils/apiUtils';
 
 interface AuthResponse {
   user: User;
@@ -56,7 +57,8 @@ export const loginUser = createAsyncThunk(
       
     } catch (error: any) {
       console.error('❌ Login error:', error);
-      return rejectWithValue(error.message || 'Login failed');
+      const errorDetails = apiUtils.extractErrorDetails(error);
+      return rejectWithValue(apiUtils.getErrorMessage('login', errorDetails));
     }
   }
 );
@@ -81,7 +83,8 @@ export const registerUser = createAsyncThunk(
       return { user, accessToken, refreshToken };
     } catch (error: any) {
       console.error('❌ Registration error:', error);
-      return rejectWithValue(error.message || 'Registration failed');
+      const errorDetails = apiUtils.extractErrorDetails(error);
+      return rejectWithValue(apiUtils.getErrorMessage('register', errorDetails));
     }
   }
 );
@@ -123,7 +126,8 @@ export const refreshToken = createAsyncThunk(
       return { accessToken, refreshToken };
     } catch (error: any) {
       console.error('❌ Token refresh error:', error);
-      return rejectWithValue(error.message || 'Token refresh failed');
+      const errorDetails = apiUtils.extractErrorDetails(error);
+      return rejectWithValue(apiUtils.getErrorMessage('refreshToken', errorDetails));
     }
   }
 );
@@ -135,7 +139,8 @@ export const getUserProfile = createAsyncThunk(
       const response = await authService.getProfile();
       return response.data as User;
     } catch (error: any) {
-      return rejectWithValue(error.message || 'Failed to get profile');
+      const errorDetails = apiUtils.extractErrorDetails(error);
+      return rejectWithValue(apiUtils.getErrorMessage('getProfile', errorDetails));
     }
   }
 );

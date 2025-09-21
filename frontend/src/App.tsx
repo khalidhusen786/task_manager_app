@@ -17,7 +17,6 @@ import DashboardLayout from './components/layout/DashboardLayout';
 // Hooks
 import { useAuth } from './hooks/useAuth';
 import { useAuthInit } from './hooks/useAuthInit';
-import { ReduxPersistDebugger } from './components/ReduxPersistDebugger';
 
 // Protected Route Component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {

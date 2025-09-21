@@ -9,7 +9,7 @@ env:
   NODE_VERSION: '20'
 
 jobs:
-  build-deploy:
+  test-and-build:
     runs-on: ubuntu-latest
 
     steps:
@@ -23,34 +23,72 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      # 3. Build Backend
+      # 3. Install Backend Dependencies
+      - name: Install backend dependencies
+        working-directory: ./backend
+        run: npm ci
+
+      # 4. Run Backend Tests
+      - name: Run backend tests
+        working-directory: ./backend
+        run: npm run test:ci
+
+      # 5. Build Backend
       - name: Build backend
         working-directory: ./backend
-        run: |
-          npm ci
-          npm run build
+        run: npm run build
 
-      # 4. Build Frontend
+      # 6. Install Frontend Dependencies
+      - name: Install frontend dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      # 7. Run Frontend Tests
+      - name: Run frontend tests
+        working-directory: ./frontend
+        run: npm run test:ci
+
+      # 8. Build Frontend
       - name: Build frontend
         working-directory: ./frontend
         run: |
-          npm ci
           tsc --noEmit --skipLibCheck
           npm run build
         env:
           VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
 
-      # 5. Deploy Backend to Railway (using Railway CLI)
+  deploy-backend:
+    needs: test-and-build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master'
+
+    steps:
+      # 1. Checkout code
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. Install Railway CLI
       - name: Install Railway CLI
         run: npm install -g @railway/cli
 
+      # 3. Deploy Backend to Railway
       - name: Deploy backend to Railway
         working-directory: ./backend
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: railway up --detach --service ${{ secrets.RAILWAY_SERVICE_ID }}
 
-      # 6. Deploy Frontend to Vercel
+  deploy-frontend:
+    needs: test-and-build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master'
+
+    steps:
+      # 1. Checkout code
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. Deploy Frontend to Vercel
       - name: Deploy frontend to Vercel
         uses: amondnet/vercel-action@v25
         with:
@@ -62,6 +100,17 @@ jobs:
         env:
           VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
 
-      # 7. Notify success
-      - name: Deployment successful
-        run: echo "✅ Backend deployed to Railway & Frontend deployed to Vercel"
+  notify-success:
+    needs: [deploy-backend, deploy-frontend]
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+      - name: Deployment status
+        run: |
+          if [ "${{ needs.deploy-backend.result }}" == "success" ] && [ "${{ needs.deploy-frontend.result }}" == "success" ]; then
+            echo "✅ Backend deployed to Railway & Frontend deployed to Vercel"
+          else
+            echo "❌ Deployment failed - Backend: ${{ needs.deploy-backend.result }}, Frontend: ${{ needs.deploy-frontend.result }}"
+            exit 1
+          fi
