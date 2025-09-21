@@ -42,7 +42,7 @@ jobs:
 
       # 5. Deploy Backend to Railway (using Railway CLI)
       - name: Install Railway CLI
-        run: npm install -g railway
+        run: npm install -g @railway/cli
 
       - name: Login to Railway
         run: railway login --apiKey ${{ secrets.RAILWAY_TOKEN }}
