@@ -11,14 +11,15 @@ let mongoServer: MongoMemoryServer;
 
 // Setup test database
 export const setupTestDB = async () => {
+  if (mongoose.connection.readyState === 1) return;
+
   mongoServer = await MongoMemoryServer.create();
   const mongoUri = mongoServer.getUri();
-  
-  await mongoose.connect(mongoUri);
-  
-  // Override config for testing
+
+  await mongoose.connect(mongoUri); // No extra options needed
   (config as any).mongodb.uri = mongoUri;
 };
+
 
 // Cleanup test database
 export const cleanupTestDB = async () => {
@@ -41,6 +42,8 @@ export const clearCollections = async () => {
     await collection.deleteMany({});
   }
 };
+
+
 
 // Test timeout
 export const TEST_TIMEOUT = 30000;

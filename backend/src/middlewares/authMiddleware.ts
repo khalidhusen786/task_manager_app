@@ -26,29 +26,25 @@ export const authenticateToken = async (
   req: Request,
   res: Response,
   next: NextFunction
-): Promise<void> => {
+): Promise<Response | void> => { // <-- allow Response return
   try {
-    // Try to extract token from cookie first, then from Authorization header
-    let token = CookieUtil.extractTokenFromCookie(req.headers.cookie, 'accessToken');
-    
-    if (!token) {
-      token = JWTUtil.extractTokenFromHeader(req.headers.authorization);
+    let token = JWTUtil.extractTokenFromHeader(req.headers.authorization);
+
+    if (!token && req.headers.cookie) {
+      token = CookieUtil.extractTokenFromCookie(req.headers.cookie, 'accessToken');
     }
 
     if (!token) {
-      throw new AuthenticationError('Access token required');
+      return res.status(401).json({ success: false, message: 'Access token required' });
     }
 
-    // Verify and decode token
     const decoded = JWTUtil.verifyAccessToken(token);
 
-    // Find user in database
     const user = await User.findById(decoded.userId).select('-password -refreshTokens');
     if (!user || !user.isActive) {
-      throw new AuthenticationError('User not found or inactive');
+      return res.status(401).json({ success: false, message: 'User not found or inactive' });
     }
 
-    // Add user to request object
     req.user = {
       id: user._id.toString(),
       email: user.email,
@@ -60,13 +56,13 @@ export const authenticateToken = async (
       email: user.email,
       endpoint: req.path,
       method: req.method,
-      authMethod: req.headers.cookie ? 'cookie' : 'header',
+      authMethod: req.headers.authorization ? 'header' : 'cookie',
     });
 
     next();
-  } catch (error) {
+  } catch (err: any) {
     logger.warn('Authentication failed', {
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: err.message || 'Unknown error',
       hasCookie: !!req.headers.cookie,
       hasHeader: !!req.headers.authorization,
       ip: req.ip,
@@ -74,10 +70,12 @@ export const authenticateToken = async (
       endpoint: req.path,
       method: req.method,
     });
-    
-    next(error);
+
+    return res.status(401).json({ success: false, message: 'Invalid access token' });
   }
 };
+
+
 
 /**
  * Optional authentication middleware - doesn't throw error if no token

@@ -61,8 +61,11 @@ const connectDB = async () => {
   }
 };
 
-connectDB();
 
+// Only connect automatically if NOT in test environment
+if (process.env.NODE_ENV !== 'test') {
+  connectDB();
+}
 // --------- Routes ---------
 app.use("/api/auth", authRoutes);
 app.use("/api/tasks", taskRoutes);

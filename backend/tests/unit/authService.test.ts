@@ -1,9 +1,11 @@
 // Unit tests for AuthService
-import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll } from '@jest/globals';
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, jest } from '@jest/globals';
 import { AuthService } from '../../src/services/authService';
 import { User } from '../../src/models/User';
 import { AppError } from '../../src/utils/errors';
 import { setupTestDB, cleanupTestDB, clearCollections, TEST_TIMEOUT } from '../setup';
+import jwt from 'jsonwebtoken';
+import { JWTUtil } from '../../src/utils/jwt';
 
 describe('AuthService', () => {
   let authService: AuthService;
@@ -117,13 +119,22 @@ describe('AuthService', () => {
       userId = result.user._id!;
     });
 
-    it('should refresh token successfully', async () => {
-      const result = await authService.refreshToken(refreshToken);
+  it('should refresh token successfully', async () => {
+  // Mock generateRefreshToken to return a new token
+  const mockRefreshToken = 'new-mock-refresh-token';
+  jest.spyOn(JWTUtil, 'generateRefreshToken').mockImplementation(() => mockRefreshToken);
+  jest.spyOn(JWTUtil, 'generateAccessToken').mockImplementation(() => 'new-mock-access-token');
 
-      expect(result).toHaveProperty('accessToken');
-      expect(result).toHaveProperty('refreshToken');
-      expect(result.refreshToken).not.toBe(refreshToken); // Should be new token
-    });
+  const result = await authService.refreshToken(refreshToken);
+
+  expect(result).toHaveProperty('accessToken', 'new-mock-access-token');
+  expect(result).toHaveProperty('refreshToken', mockRefreshToken);
+
+  // Optional: check that old token is removed
+  const user = await User.findById(userId).select('+refreshTokens');
+  expect(user?.refreshTokens).toContain(mockRefreshToken);
+  expect(user?.refreshTokens).not.toContain(refreshToken);
+});
 
     it('should throw error with invalid token', async () => {
       await expect(authService.refreshToken('invalid-token'))
