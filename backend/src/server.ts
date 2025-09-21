@@ -53,7 +53,8 @@ app.use(rateLimit({
 // --------- Database connection ---------
 const connectDB = async () => {
   try {
-    await mongoose.connect(config.mongodb.uri);
+    mongoose.set('strictQuery', false);
+    await mongoose.connect(config.mongodb.uri, config.mongodb.options);
     logger.info("✅ MongoDB connected successfully");
   } catch (error: any) {
     console.error("❌ MongoDB connection failed:", error.message);
@@ -61,11 +62,8 @@ const connectDB = async () => {
   }
 };
 
-
-// Only connect automatically if NOT in test environment
-if (process.env.NODE_ENV !== 'test') {
-  connectDB();
-}
+connectDB();
+// Only connect automatically if NOT in test environmen
 // --------- Routes ---------
 app.use("/api/auth", authRoutes);
 app.use("/api/tasks", taskRoutes);

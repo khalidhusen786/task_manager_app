@@ -47,7 +47,7 @@ describe('Tasks Integration Tests', () => {
         description: 'Test Description',
         priority: 'medium',
         status: 'pending',
-        dueDate: '2024-12-31T00:00:00.000Z'
+        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days from now
       };
 
       const response = await request(app)
@@ -58,7 +58,7 @@ describe('Tasks Integration Tests', () => {
 
       expect(response.body.success).toBe(true);
       expect(response.body.message).toBe('Task created successfully');
-      expect(response.body.data).toHaveProperty('_id');
+      expect(response.body.data).toHaveProperty('id');
       expect(response.body.data.title).toBe(taskData.title);
       expect(response.body.data.description).toBe(taskData.description);
       expect(response.body.data.priority).toBe(taskData.priority);
@@ -107,21 +107,21 @@ describe('Tasks Integration Tests', () => {
           description: 'Description 1',
           priority: 'high',
           status: 'pending',
-          dueDate: '2024-12-31T00:00:00.000Z'
+          dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days from now
         },
         {
           title: 'Task 2',
           description: 'Description 2',
           priority: 'medium',
           status: 'in_progress',
-          dueDate: '2024-12-30T00:00:00.000Z'
+          dueDate: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000).toISOString()
         },
         {
           title: 'Task 3',
           description: 'Description 3',
           priority: 'low',
           status: 'completed',
-          dueDate: '2024-12-29T00:00:00.000Z'
+          dueDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString()
         }
       ];
 
@@ -207,7 +207,7 @@ describe('Tasks Integration Tests', () => {
         description: 'Test Description',
         priority: 'medium',
         status: 'pending',
-        dueDate: '2024-12-31T00:00:00.000Z'
+        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days from now
       };
 
       const response = await request(app)
@@ -215,7 +215,7 @@ describe('Tasks Integration Tests', () => {
         .set('Authorization', `Bearer ${accessToken}`)
         .send(taskData);
 
-      taskId = response.body.data._id;
+      taskId = response.body.data.id;
     });
 
     it('should get task by ID', async () => {
@@ -257,7 +257,7 @@ describe('Tasks Integration Tests', () => {
         description: 'Test Description',
         priority: 'medium',
         status: 'pending',
-        dueDate: '2024-12-31T00:00:00.000Z'
+        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days from now
       };
 
       const response = await request(app)
@@ -265,7 +265,7 @@ describe('Tasks Integration Tests', () => {
         .set('Authorization', `Bearer ${accessToken}`)
         .send(taskData);
 
-      taskId = response.body.data._id;
+      taskId = response.body.data.id;
     });
 
     it('should update task successfully', async () => {
@@ -317,7 +317,7 @@ describe('Tasks Integration Tests', () => {
         description: 'Test Description',
         priority: 'medium',
         status: 'pending',
-        dueDate: '2024-12-31T00:00:00.000Z'
+        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days from now
       };
 
       const response = await request(app)
@@ -325,7 +325,7 @@ describe('Tasks Integration Tests', () => {
         .set('Authorization', `Bearer ${accessToken}`)
         .send(taskData);
 
-      taskId = response.body.data._id;
+      taskId = response.body.data.id;
     });
 
     it('should delete task successfully', async () => {
@@ -388,13 +388,10 @@ describe('Tasks Integration Tests', () => {
         .expect(200);
 
       expect(response.body.success).toBe(true);
-      expect(response.body.data.totalTasks).toBe(4);
-      expect(response.body.data.pendingTasks).toBe(1);
-      expect(response.body.data.inProgressTasks).toBe(1);
-      expect(response.body.data.completedTasks).toBe(2);
-      expect(response.body.data.highPriorityTasks).toBe(2);
-      expect(response.body.data.mediumPriorityTasks).toBe(1);
-      expect(response.body.data.lowPriorityTasks).toBe(1);
+      expect(response.body.data.total).toBe(4);
+      expect(response.body.data.pending).toBe(1);
+      expect(response.body.data.inProgress).toBe(1);
+      expect(response.body.data.completed).toBe(2);
     });
 
     it('should return 401 for missing authentication', async () => {

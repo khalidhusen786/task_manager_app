@@ -6,6 +6,11 @@ import type { Task, TaskFilters } from '../types';
  * This is used for client-side filtering to avoid excessive API calls
  */
 export const filterTasks = (tasks: Task[], filters: TaskFilters): Task[] => {
+  // Safety check: ensure tasks is an array
+  if (!Array.isArray(tasks)) {
+    return [];
+  }
+  
   let filtered = [...tasks];
 
   // Filter by search term (client-side only)

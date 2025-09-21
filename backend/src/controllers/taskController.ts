@@ -40,12 +40,14 @@ export class TaskController {
     
     res.json({
       success: true,
-      data: result.tasks,
-      pagination: {
-        page: result.page,
-        limit: result.limit,
-        totalPages: result.totalPages,
-        totalTasks: result.totalTasks
+      data: {
+        tasks: result.tasks,
+        pagination: {
+          page: result.page,
+          limit: result.limit,
+          totalPages: result.totalPages,
+          totalTasks: result.totalTasks
+        }
       }
     });
   });

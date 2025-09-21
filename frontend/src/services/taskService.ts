@@ -11,9 +11,8 @@ export interface TaskStatsResponse {
   stats: TaskStats;
 }
 
-
 class TaskService {
-  async getTasks(filters: TaskFilters = {}): Promise<ApiResponse<TasksResponse>> {
+  async getTasks(filters: TaskFilters = {}): Promise<ApiResponse<any>> {
     const params = new URLSearchParams();
     
     Object.entries(filters).forEach(([key, value]) => {
@@ -25,29 +24,27 @@ class TaskService {
     return apiService.get(`/tasks?${params.toString()}`);
   }
 
-  async getTask(id: string): Promise<ApiResponse<{ task: Task }>> {
+  async getTask(id: string): Promise<ApiResponse<any>> {
     return apiService.get(`/tasks/${id}`);
   }
 
-  async createTask(data: TaskFormData): Promise<ApiResponse<{ task: Task }>> {
+  async createTask(data: TaskFormData): Promise<ApiResponse<any>> {
     return apiService.post('/tasks', data);
   }
 
-  async updateTask(id: string, data: Partial<TaskFormData>): Promise<ApiResponse<{ task: Task }>> {
+  async updateTask(id: string, data: Partial<TaskFormData>): Promise<ApiResponse<any>> {
     return apiService.put(`/tasks/${id}`, data);
   }
 
-
-  async deleteTask(id: string): Promise<ApiResponse> {
+  async deleteTask(id: string): Promise<ApiResponse<any>> {
     return apiService.delete(`/tasks/${id}`);
   }
 
-  async deleteManyTasks(taskIds: string[]): Promise<ApiResponse<{ deletedCount: number }>> {
+  async deleteManyTasks(taskIds: string[]): Promise<ApiResponse<any>> {
     return apiService.delete('/tasks', { data: { taskIds } });
   }
 
-
-  async getTaskStats(): Promise<ApiResponse<TaskStatsResponse>> {
+  async getTaskStats(): Promise<ApiResponse<any>> {
     return apiService.get('/tasks/stats');
   }
 }

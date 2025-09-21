@@ -30,7 +30,7 @@ const TaskList: React.FC<TaskListProps> = ({
 }) => {
   // Apply client-side filtering
   const filteredTasks = useMemo(() => {
-    return filterTasks(tasks, filters);
+    return filterTasks(tasks || [], filters);
   }, [tasks, filters]);
   if (error) {
     return (

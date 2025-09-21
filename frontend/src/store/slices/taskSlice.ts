@@ -144,34 +144,30 @@ const taskSlice = createSlice({
   extraReducers: (builder) => {
     // Fetch Tasks
     builder
-      .addCase(fetchTasks.pending, (state) => {
+   .addCase(fetchTasks.pending, (state) => {
         state.isLoading = true;
         state.error = null;
       })
       .addCase(fetchTasks.fulfilled, (state, action) => {
         state.isLoading = false;
-        const newTasks = (action.payload?.data ?? []) as Task[];
-        const newPagination = (action.payload?.pagination ?? state.pagination) as PaginationInfo;
         
-        // If this is a new page, append to existing tasks, otherwise replace
-        if (newPagination.page > 1) {
-          state.tasks = [...state.tasks, ...newTasks];
+        // Handle your backend response structure
+        const responseData = action.payload?.data;
+        const tasks = responseData?.tasks || [];
+        const pagination = responseData?.pagination || state.pagination;
+        
+        if (pagination.page > 1) {
+          state.tasks = [...state.tasks, ...tasks];
         } else {
-          state.tasks = newTasks;
+          state.tasks = tasks;
         }
         
-        state.pagination = newPagination;
+        state.pagination = pagination;
         state.error = null;
       })
       .addCase(fetchTasks.rejected, (state, action) => {
         state.isLoading = false;
-        const payload = action.payload as any;
-        if (payload?.status === 429) {
-          const secs = payload?.retryAfterSeconds;
-          state.error = secs ? `Too many requests. Try again in ${secs}s.` : 'Too many requests. Please try again shortly.';
-        } else {
-          state.error = (payload?.message as string) || (action.payload as string);
-        }
+        state.error = action.payload as string;
       });
 
     // Fetch Single Task
@@ -192,14 +188,17 @@ const taskSlice = createSlice({
 
     // Create Task
     builder
-      .addCase(createTask.pending, (state) => {
+    .addCase(createTask.pending, (state) => {
         state.isLoading = true;
         state.error = null;
       })
       .addCase(createTask.fulfilled, (state, action) => {
         state.isLoading = false;
-        if (action.payload?.data) {
-          state.tasks.unshift(action.payload.data as Task);
+        
+        // Handle your backend response structure
+        const newTask = action.payload?.data;
+        if (newTask) {
+          state.tasks.unshift(newTask);
         }
         state.error = null;
       })
@@ -208,31 +207,23 @@ const taskSlice = createSlice({
         state.error = action.payload as string;
       });
 
+
     // Update Task
     builder
-      .addCase(updateTask.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
-      })
-      .addCase(updateTask.fulfilled, (state, action) => {
+     .addCase(updateTask.fulfilled, (state, action) => {
         state.isLoading = false;
-        const updated = action.payload?.data as Task;
-        if (updated) {
-          const index = state.tasks.findIndex(task => task._id === updated._id);
+        const updatedTask = action.payload?.data;
+        if (updatedTask) {
+          const index = state.tasks.findIndex(task => task._id === updatedTask._id);
           if (index !== -1) {
-            state.tasks[index] = updated;
+            state.tasks[index] = updatedTask;
           }
-          if (state.currentTask?._id === updated._id) {
-            state.currentTask = updated;
+          if (state.currentTask?._id === updatedTask._id) {
+            state.currentTask = updatedTask;
           }
         }
         state.error = null;
-      })
-      .addCase(updateTask.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.payload as string;
       });
-
 
     // Delete Task
     builder
@@ -275,18 +266,10 @@ const taskSlice = createSlice({
 
     // Fetch Task Stats
     builder
-      .addCase(fetchTaskStats.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
-      })
-      .addCase(fetchTaskStats.fulfilled, (state, action) => {
+   .addCase(fetchTaskStats.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.stats = action.payload?.data as TaskStats;
+        state.stats = action.payload?.data;
         state.error = null;
-      })
-      .addCase(fetchTaskStats.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.payload as string;
       });
   },
 });

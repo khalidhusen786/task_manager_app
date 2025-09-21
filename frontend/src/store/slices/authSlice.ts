@@ -1,9 +1,9 @@
-// ===== AUTH SLICE =====
+// ===== MINIMAL CHANGES TO YOUR EXISTING AUTH SLICE =====
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import type { User, AuthState, LoginFormData, RegisterFormData } from '../../types';
 import authService from '../../services/authService';
 
-// Initial state
+// Keep your existing initial state
 const initialState: AuthState = {
   user: null,
   isAuthenticated: false,
@@ -11,7 +11,7 @@ const initialState: AuthState = {
   error: null,
 };
 
-// Async thunks
+// Keep ALL your existing thunks exactly as they are
 export const registerUser = createAsyncThunk(
   'auth/register',
   async (userData: { name: string; email: string; password: string }, { rejectWithValue }) => {
@@ -67,12 +67,13 @@ export const getUserProfile = createAsyncThunk(
       const response = await authService.getProfile();
       return response.data as User;
     } catch (error: any) {
+      console.log('getUserProfile failed:', error.message);
       return rejectWithValue(error.message || 'Failed to get profile');
     }
   }
 );
 
-// Auth slice
+// Keep your existing reducers, just add one new action
 const authSlice = createSlice({
   name: 'auth',
   initialState,
@@ -89,8 +90,16 @@ const authSlice = createSlice({
       state.isAuthenticated = false;
       state.error = null;
     },
+    // ADD THIS NEW ACTION - only change needed
+    setAuthFromPersist: (state, action: PayloadAction<{ user: User | null; isAuthenticated: boolean }>) => {
+      state.user = action.payload.user;
+      state.isAuthenticated = action.payload.isAuthenticated;
+      state.error = null;
+      state.isLoading = false;
+    }
   },
   extraReducers: (builder) => {
+    // Keep all your existing extraReducers exactly as they are
     // Register
     builder
       .addCase(registerUser.pending, (state) => {
@@ -156,7 +165,7 @@ const authSlice = createSlice({
         state.error = action.payload as string;
       });
 
-    // Get Profile
+    // Get Profile - ONLY CHANGE: Don't auto-clear on failure
     builder
       .addCase(getUserProfile.pending, (state) => {
         state.isLoading = true;
@@ -171,9 +180,18 @@ const authSlice = createSlice({
       .addCase(getUserProfile.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
+        
+        // ONLY change: Only clear user state for auth-related errors
+        const errorMessage = action.payload as string;
+        if (errorMessage?.includes('token') || errorMessage?.includes('authenticated') || errorMessage?.includes('401')) {
+          state.user = null;
+          state.isAuthenticated = false;
+        }
+        // For network errors, keep user state intact
       });
   },
 });
 
-export const { clearError, setUser, clearUser } = authSlice.actions;
+// Export all your existing actions + the new one
+export const { clearError, setUser, clearUser, setAuthFromPersist } = authSlice.actions;
 export default authSlice.reducer;

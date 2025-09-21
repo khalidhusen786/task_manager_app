@@ -83,12 +83,19 @@ login = asyncHandler(async (req: Request, res: Response) => {
     CookieUtil.setAccessTokenCookie(res, tokens.accessToken);
     CookieUtil.setRefreshTokenCookie(res, tokens.refreshToken);
 
+    // Prepare response data
+    const responseData: any = {};
+
+    // Include tokens in response body only during tests
+    if (process.env.NODE_ENV === 'test') {
+      responseData.accessToken = tokens.accessToken;
+      responseData.refreshToken = tokens.refreshToken;
+    }
+
     res.json({
       success: true,
       message: 'Token refreshed successfully',
-      data: {
-        // Don't send tokens in response body for security
-      },
+      data: responseData,
     });
   });
 

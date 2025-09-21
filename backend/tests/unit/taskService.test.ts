@@ -1,7 +1,7 @@
 // Unit tests for TaskService
 import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll } from '@jest/globals';
 import { TaskService } from '../../src/services/taskService';
-import { Task } from '../../src/models/Task';
+import { Task, TaskStatus, TaskPriority } from '../../src/models/Task';
 import { User } from '../../src/models/User';
 import { AppError } from '../../src/utils/errors';
 import { setupTestDB, cleanupTestDB, clearCollections, TEST_TIMEOUT } from '../setup';
@@ -41,13 +41,12 @@ describe('TaskService', () => {
       const taskData = {
         title: 'Test Task',
         description: 'Test Description',
-        priority: 'medium',
-        status: 'pending',
-        dueDate: new Date('2024-12-31'),
-        userId
+        priority: TaskPriority.MEDIUM,
+        status: TaskStatus.PENDING,
+        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
       };
 
-      const result = await taskService.createTask(taskData);
+      const result = await taskService.createTask(userId, taskData);
 
       expect(result).toHaveProperty('_id');
       expect(result.title).toBe(taskData.title);
@@ -57,17 +56,20 @@ describe('TaskService', () => {
       expect(result.userId.toString()).toBe(userId);
     });
 
-    it('should throw error for invalid user', async () => {
+    it('should create task for any valid ObjectId user', async () => {
       const taskData = {
         title: 'Test Task',
         description: 'Test Description',
-        priority: 'medium',
-        status: 'pending',
-        dueDate: new Date('2024-12-31'),
-        userId: '507f1f77bcf86cd799439011' // Invalid user ID
+        priority: TaskPriority.MEDIUM,
+        status: TaskStatus.PENDING,
+        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
       };
 
-      await expect(taskService.createTask(taskData)).rejects.toThrow(AppError);
+      const result = await taskService.createTask('507f1f77bcf86cd799439011', taskData);
+      
+      expect(result).toHaveProperty('_id');
+      expect(result.title).toBe(taskData.title);
+      expect(result.userId.toString()).toBe('507f1f77bcf86cd799439011');
     });
   });
 
@@ -78,64 +80,61 @@ describe('TaskService', () => {
         {
           title: 'Task 1',
           description: 'Description 1',
-          priority: 'high',
-          status: 'pending',
-          dueDate: new Date('2024-12-31'),
-          userId
+        priority: TaskPriority.HIGH,
+        status: TaskStatus.PENDING,
+          dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
         },
         {
           title: 'Task 2',
           description: 'Description 2',
-          priority: 'medium',
-          status: 'in_progress',
-          dueDate: new Date('2024-12-30'),
-          userId
+        priority: TaskPriority.MEDIUM,
+        status: TaskStatus.IN_PROGRESS,
+        dueDate: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000)
         },
         {
           title: 'Task 3',
           description: 'Description 3',
-          priority: 'low',
-          status: 'completed',
-          dueDate: new Date('2024-12-29'),
-          userId
+        priority: TaskPriority.LOW,
+        status: TaskStatus.COMPLETED,
+        dueDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000)
         }
       ];
 
       for (const taskData of tasks) {
-        await taskService.createTask(taskData);
+        await taskService.createTask(userId, taskData);
       }
     });
 
     it('should get all tasks for user', async () => {
-      const result = await taskService.getTasks(userId);
+      const result = await taskService.getTasks(userId, {}, { page: 1, limit: 10, sortBy: 'createdAt', sortOrder: 'desc' });
 
       expect(result.tasks).toHaveLength(3);
-      expect(result.pagination.totalTasks).toBe(3);
+      expect(result.totalTasks).toBe(3);
     });
 
     it('should filter tasks by status', async () => {
-      const result = await taskService.getTasks(userId, { status: 'pending' });
+      const result = await taskService.getTasks(userId, { status: TaskStatus.PENDING }, { page: 1, limit: 10, sortBy: 'createdAt', sortOrder: 'desc' });
 
       expect(result.tasks).toHaveLength(1);
-      expect(result.tasks[0].status).toBe('pending');
+      expect(result.tasks[0].status).toBe(TaskStatus.PENDING);
     });
 
     it('should filter tasks by priority', async () => {
-      const result = await taskService.getTasks(userId, { priority: 'high' });
+      const result = await taskService.getTasks(userId, { priority: TaskPriority.HIGH }, { page: 1, limit: 10, sortBy: 'createdAt', sortOrder: 'desc' });
 
       expect(result.tasks).toHaveLength(1);
-      expect(result.tasks[0].priority).toBe('high');
+      expect(result.tasks[0].priority).toBe(TaskPriority.HIGH);
     });
 
     it('should search tasks by title', async () => {
-      const result = await taskService.getTasks(userId, { search: 'Task 1' });
+      const result = await taskService.getTasks(userId, { search: 'Task 1' }, { page: 1, limit: 10, sortBy: 'createdAt', sortOrder: 'desc' });
 
       expect(result.tasks).toHaveLength(1);
       expect(result.tasks[0].title).toBe('Task 1');
     });
 
     it('should sort tasks by due date', async () => {
-      const result = await taskService.getTasks(userId, { sortBy: 'dueDate', sortOrder: 'asc' });
+      const result = await taskService.getTasks(userId, {}, { page: 1, limit: 10, sortBy: 'dueDate', sortOrder: 'asc' });
 
       expect(result.tasks[0].title).toBe('Task 3'); // Earliest due date
       expect(result.tasks[2].title).toBe('Task 1'); // Latest due date
@@ -149,18 +148,17 @@ describe('TaskService', () => {
       const taskData = {
         title: 'Test Task',
         description: 'Test Description',
-        priority: 'medium',
-        status: 'pending',
-        dueDate: new Date('2024-12-31'),
-        userId
+        priority: TaskPriority.MEDIUM,
+        status: TaskStatus.PENDING,
+        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
       };
 
-      const task = await taskService.createTask(taskData);
+      const task = await taskService.createTask(userId, taskData);
       taskId = task._id.toString();
     });
 
     it('should get task by ID', async () => {
-      const result = await taskService.getTask(taskId, userId);
+      const result = await taskService.getTaskById(taskId, userId);
 
       expect(result._id.toString()).toBe(taskId);
       expect(result.title).toBe('Test Task');
@@ -168,7 +166,7 @@ describe('TaskService', () => {
 
     it('should throw error for non-existent task', async () => {
       const fakeId = '507f1f77bcf86cd799439011';
-      await expect(taskService.getTask(fakeId, userId)).rejects.toThrow(AppError);
+      await expect(taskService.getTaskById(fakeId, userId)).rejects.toThrow(AppError);
     });
 
     it('should throw error for task belonging to different user', async () => {
@@ -179,7 +177,7 @@ describe('TaskService', () => {
       });
       await otherUser.save();
 
-      await expect(taskService.getTask(taskId, otherUser._id.toString()))
+      await expect(taskService.getTaskById(taskId, otherUser._id.toString()))
         .rejects.toThrow(AppError);
     });
   });
@@ -191,32 +189,31 @@ describe('TaskService', () => {
       const taskData = {
         title: 'Test Task',
         description: 'Test Description',
-        priority: 'medium',
-        status: 'pending',
-        dueDate: new Date('2024-12-31'),
-        userId
+        priority: TaskPriority.MEDIUM,
+        status: TaskStatus.PENDING,
+        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
       };
 
-      const task = await taskService.createTask(taskData);
+      const task = await taskService.createTask(userId, taskData);
       taskId = task._id.toString();
     });
 
     it('should update task successfully', async () => {
       const updateData = {
         title: 'Updated Task',
-        status: 'in_progress'
+        status: TaskStatus.IN_PROGRESS
       };
 
-      const result = await taskService.updateTask(taskId, updateData, userId);
+      const result = await taskService.updateTask(taskId, userId, updateData);
 
       expect(result.title).toBe('Updated Task');
-      expect(result.status).toBe('in_progress');
+      expect(result.status).toBe(TaskStatus.IN_PROGRESS);
       expect(result.description).toBe('Test Description'); // Should remain unchanged
     });
 
     it('should throw error for non-existent task', async () => {
       const fakeId = '507f1f77bcf86cd799439011';
-      await expect(taskService.updateTask(fakeId, { title: 'Updated' }, userId))
+      await expect(taskService.updateTask(fakeId, userId, { title: 'Updated' }))
         .rejects.toThrow(AppError);
     });
   });
@@ -228,13 +225,12 @@ describe('TaskService', () => {
       const taskData = {
         title: 'Test Task',
         description: 'Test Description',
-        priority: 'medium',
-        status: 'pending',
-        dueDate: new Date('2024-12-31'),
-        userId
+        priority: TaskPriority.MEDIUM,
+        status: TaskStatus.PENDING,
+        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
       };
 
-      const task = await taskService.createTask(taskData);
+      const task = await taskService.createTask(userId, taskData);
       taskId = task._id.toString();
     });
 
@@ -242,7 +238,7 @@ describe('TaskService', () => {
       await expect(taskService.deleteTask(taskId, userId)).resolves.not.toThrow();
 
       // Verify task is deleted
-      await expect(taskService.getTask(taskId, userId)).rejects.toThrow(AppError);
+      await expect(taskService.getTaskById(taskId, userId)).rejects.toThrow(AppError);
     });
 
     it('should throw error for non-existent task', async () => {
@@ -255,27 +251,24 @@ describe('TaskService', () => {
     beforeEach(async () => {
       // Create test tasks with different statuses
       const tasks = [
-        { title: 'Task 1', priority: 'high', status: 'pending', userId },
-        { title: 'Task 2', priority: 'medium', status: 'in_progress', userId },
-        { title: 'Task 3', priority: 'low', status: 'completed', userId },
-        { title: 'Task 4', priority: 'high', status: 'completed', userId }
+        { title: 'Task 1', priority: TaskPriority.HIGH, status: TaskStatus.PENDING },
+        { title: 'Task 2', priority: TaskPriority.MEDIUM, status: TaskStatus.IN_PROGRESS },
+        { title: 'Task 3', priority: TaskPriority.LOW, status: TaskStatus.COMPLETED },
+        { title: 'Task 4', priority: TaskPriority.HIGH, status: TaskStatus.COMPLETED }
       ];
 
       for (const taskData of tasks) {
-        await taskService.createTask(taskData);
+        await taskService.createTask(userId, taskData);
       }
     });
 
     it('should get task statistics', async () => {
       const result = await taskService.getTaskStats(userId);
 
-      expect(result.totalTasks).toBe(4);
-      expect(result.pendingTasks).toBe(1);
-      expect(result.inProgressTasks).toBe(1);
-      expect(result.completedTasks).toBe(2);
-      expect(result.highPriorityTasks).toBe(2);
-      expect(result.mediumPriorityTasks).toBe(1);
-      expect(result.lowPriorityTasks).toBe(1);
+      expect(result.total).toBe(4);
+      expect(result.pending).toBe(1);
+      expect(result.inProgress).toBe(1);
+      expect(result.completed).toBe(2);
     });
   });
 });

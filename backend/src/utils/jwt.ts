@@ -33,7 +33,8 @@ export class JWTUtil {
   static generateRefreshToken(userId: string): string {
     const payload: JWTPayload = {
       userId,
-      type: 'refresh'
+      type: 'refresh',
+      iat: Math.floor(Date.now() / 1000) + Math.floor(Math.random() * 1000) // Add random component for uniqueness
     };
 
     return jwt.sign(payload, config.jwt.refreshSecret as Secret, {
