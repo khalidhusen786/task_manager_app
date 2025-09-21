@@ -1,6 +1,6 @@
 // ===== MINIMAL CHANGES TO YOUR EXISTING AUTH SLICE =====
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import type { User, AuthState, LoginFormData, RegisterFormData } from '../../types';
+import type { User, AuthState, LoginFormData, RegisterFormData ,RegisterApiPayload} from '../../types';
 import authService from '../../services/authService';
 
 // Keep your existing initial state
@@ -14,7 +14,7 @@ const initialState: AuthState = {
 // Keep ALL your existing thunks exactly as they are
 export const registerUser = createAsyncThunk(
   'auth/register',
-  async (userData: { name: string; email: string; password: string }, { rejectWithValue }) => {
+  async (userData: RegisterApiPayload, { rejectWithValue }) => {
     try {
       const response = await authService.register(userData);
       return response.data?.user as User;
@@ -23,6 +23,7 @@ export const registerUser = createAsyncThunk(
     }
   }
 );
+
 
 export const loginUser = createAsyncThunk(
   'auth/login',

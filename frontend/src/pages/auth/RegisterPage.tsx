@@ -47,20 +47,24 @@ const RegisterPage: React.FC = () => {
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
   });
+type RegisterApiPayload = Omit<RegisterFormData, 'confirmPassword'>;
 
-  const onSubmit = async (data: RegisterFormData) => {
-    try {
-      await dispatch(registerUser({
-        name: data.name,
-        email: data.email,
-        password: data.password,
-      })).unwrap();
-      navigate(ROUTES.DASHBOARD);
-      addToast({ type: 'success', message: 'Account created. Welcome!' });
-    } catch (error) {
-      addToast({ type: 'error', message: 'Registration failed. Please try again.' });
-    }
+const onSubmit = async (data: RegisterFormData) => {
+  const payload: RegisterApiPayload = {
+    name: data.name,
+    email: data.email,
+    password: data.password,
   };
+
+  try {
+    await dispatch(registerUser(payload)).unwrap();
+    navigate(ROUTES.DASHBOARD);
+    addToast({ type: 'success', message: 'Account created. Welcome!' });
+  } catch (error) {
+    addToast({ type: 'error', message: 'Registration failed. Please try again.' });
+  }
+};
+
 
   const clearErrorMessage = () => {
     dispatch(clearError());

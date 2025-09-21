@@ -96,6 +96,13 @@ export interface RegisterFormData {
   confirmPassword: string;
 }
 
+export interface RegisterApiPayload {
+  name: string;
+  email: string;
+  password: string;
+}
+
+
 export interface TaskFormData {
   title: string;
   description?: string;

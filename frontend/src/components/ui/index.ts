@@ -19,6 +19,5 @@ export type { BadgeProps } from './Badge';
 export type { ModalProps } from './Modal';
 export type { LoadingSpinnerProps } from './LoadingSpinner';
 export type { AlertProps } from './Alert';
-export type { ModalProps } from './Modal';
 
 
