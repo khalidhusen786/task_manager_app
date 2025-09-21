@@ -40,15 +40,17 @@ const LoginPage: React.FC = () => {
     resolver: zodResolver(loginSchema),
   });
 
-  const onSubmit = async (data: LoginFormData) => {
-    try {
-      await dispatch(loginUser(data)).unwrap();
-      navigate(ROUTES.DASHBOARD);
-      addToast({ type: 'success', message: 'Welcome back!' });
-    } catch (error) {
-      addToast({ type: 'error', message: 'Login failed. Check your credentials.' });
-    }
-  };
+    const onSubmit = async (data: LoginFormData) => {
+      try {
+        const result = await dispatch(loginUser(data)).unwrap();
+        console.log('📥 Login action completed:', result);
+        console.log('📥 Result data:', result);
+        navigate(ROUTES.DASHBOARD);
+        addToast({ type: 'success', message: 'Welcome back!' });
+      } catch (error) {
+        addToast({ type: 'error', message: 'Login failed. Check your credentials.' });
+      }
+    };
 
   const clearErrorMessage = () => {
     dispatch(clearError());

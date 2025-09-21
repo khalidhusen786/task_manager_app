@@ -32,12 +32,20 @@ app.use(helmet({
   },
 }));
 
-app.use(cors({
-  origin: config.allowedOrigins,
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-}));
+if (process.env.NODE_ENV === 'production') {
+  app.use(
+    cors({
+      origin: config.allowedOrigins, // only allow your frontend URL
+      credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    })
+  );
+} else {
+  // Optional: allow all origins in development
+  app.use(cors({ origin: true, credentials: true }));
+}
+
 
 app.use(cookieParser(config.cookieSecret));
 app.use(express.json({ limit: '10mb' }));

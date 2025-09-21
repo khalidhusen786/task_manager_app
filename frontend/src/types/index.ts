@@ -7,6 +7,8 @@ export interface User {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  accessToken?: string; // Optional, included on login/register
+  refreshToken?: string; // Optional, included on login/register
 }
 
 export interface Task {
@@ -63,6 +65,8 @@ export interface ApiResponse<T = any> {
 
 export interface AuthState {
   user: User | null;
+  accessToken: string | null;
+  refreshToken: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;

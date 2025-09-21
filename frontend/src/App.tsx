@@ -1,27 +1,30 @@
-
-
-
-
+// src/App.tsx
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { Provider } from 'react-redux';
-import { persistor, store } from './store';
-import { useAuth } from './hooks/useAuth';
-import { useAuthInit } from './hooks/useAuthInit';
-import { ROUTES } from './constants';
 import { PersistGate } from 'redux-persist/integration/react';
+import { store, persistor } from './store';
+import { ROUTES } from './constants';
 
 // Pages
 import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
-import DashboardLayout from './components/layout/DashboardLayout';
 import TasksPage from './pages/dashboard/TasksPage';
+
+// Layout
+import DashboardLayout from './components/layout/DashboardLayout';
+
+// Hooks
+import { useAuth } from './hooks/useAuth';
+import { useAuthInit } from './hooks/useAuthInit';
+import { ReduxPersistDebugger } from './components/ReduxPersistDebugger';
 
 // Protected Route Component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, isLoading } = useAuth();
+  const hasAuthInitialized = useAuthInit();
 
-  if (isLoading) {
+  if (!hasAuthInitialized || isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
@@ -29,7 +32,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
     );
   }
 
-  return isAuthenticated ? <>{children}</> : <Navigate to={ROUTES.LOGIN} replace />;
+  return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
 };
 
 // Public Route Component
@@ -47,13 +50,10 @@ const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return isAuthenticated ? <Navigate to={ROUTES.DASHBOARD} replace /> : <>{children}</>;
 };
 
-// App Routes Component - FIXED: Wait for auth initialization
 const AppRoutes: React.FC = () => {
-  const hasAuthInitialized = useAuthInit(); // Get the initialization status
-  const { isLoading } = useAuth();
+  const hasAuthInitialized = useAuthInit();
 
-  // Show loading until auth is fully initialized
-  if (!hasAuthInitialized || isLoading) {
+  if (!hasAuthInitialized) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -94,21 +94,17 @@ const AppRoutes: React.FC = () => {
             </ProtectedRoute>
           }
         >
-          <Route index element={<Navigate to={ROUTES.TASKS} replace />} />
+          <Route index element={<Navigate to={`${ROUTES.DASHBOARD}/tasks`} replace />} />
           <Route path="tasks" element={<TasksPage />} />
         </Route>
 
-        {/* Default redirect */}
-        <Route path="/" element={<Navigate to={ROUTES.DASHBOARD} replace />} />
-        
-        {/* 404 fallback */}
+        {/* Redirect all unknown routes */}
         <Route path="*" element={<Navigate to={ROUTES.DASHBOARD} replace />} />
       </Routes>
     </Router>
   );
 };
 
-// Main App Component - unchanged
 const App: React.FC = () => {
   return (
     <Provider store={store}>

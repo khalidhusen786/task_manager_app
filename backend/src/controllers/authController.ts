@@ -14,24 +14,15 @@ register = asyncHandler(async (req: Request, res: Response) => {
   const { name, email, password } = req.body;
   const result = await this.authService.register({ name, email, password });
 
-  // Set secure HTTP-only cookies
-  CookieUtil.setAccessTokenCookie(res, result.accessToken);
-  CookieUtil.setRefreshTokenCookie(res, result.refreshToken);
-
-  logger.info('User registered successfully', { userId: result.user._id, email });
-
-  const responseData: any = { user: result.user };
-  
-  // Only include tokens in body if running in test
-  if (process.env.NODE_ENV === 'test') {
-    responseData.accessToken = result.accessToken;
-    responseData.refreshToken = result.refreshToken;
-  }
-
+  // Return tokens in response
   res.status(201).json({
     success: true,
     message: 'User registered successfully',
-    data: responseData,
+    data: {
+      user: result.user,
+      accessToken: result.accessToken,
+      refreshToken: result.refreshToken,
+    },
   });
 });
 
@@ -41,89 +32,46 @@ login = asyncHandler(async (req: Request, res: Response) => {
   const { email, password } = req.body;
   const result = await this.authService.login(email, password);
 
-  // Set secure HTTP-only cookies
-  CookieUtil.setAccessTokenCookie(res, result.accessToken);
-  CookieUtil.setRefreshTokenCookie(res, result.refreshToken);
-
-  logger.info('User logged in successfully', { userId: result.user._id, email });
-
-  // Prepare response data
-  const responseData: any = { user: result.user };
-
-  // Include tokens in response body only during tests
-  if (process.env.NODE_ENV === 'test') {
-    responseData.accessToken = result.accessToken;
-    responseData.refreshToken = result.refreshToken;
-  }
-
   res.json({
     success: true,
     message: 'Login successful',
-    data: responseData,
+    data: {
+      user: result.user,
+      accessToken: result.accessToken,
+      refreshToken: result.refreshToken,
+    },
   });
 });
 
 
+
   // -------------------- REFRESH TOKEN --------------------
-  refreshToken = asyncHandler(async (req: Request, res: Response) => {
-    // Try to get refresh token from cookie first, then from body
-    let refreshToken = CookieUtil.extractTokenFromCookie(req.headers.cookie, 'refreshToken');
-    
-    if (!refreshToken) {
-      refreshToken = req.body.refreshToken;
-    }
+refreshToken = asyncHandler(async (req: Request, res: Response) => {
+  const { refreshToken } = req.body;
+  if (!refreshToken) throw new Error('Refresh token required');
 
-    if (!refreshToken) {
-      throw new Error('Refresh token required');
-    }
+  const tokens = await this.authService.refreshToken(refreshToken);
 
-    const tokens = await this.authService.refreshToken(refreshToken);
-
-    // Set new tokens in cookies
-    CookieUtil.setAccessTokenCookie(res, tokens.accessToken);
-    CookieUtil.setRefreshTokenCookie(res, tokens.refreshToken);
-
-    // Prepare response data
-    const responseData: any = {};
-
-    // Include tokens in response body only during tests
-    if (process.env.NODE_ENV === 'test') {
-      responseData.accessToken = tokens.accessToken;
-      responseData.refreshToken = tokens.refreshToken;
-    }
-
-    res.json({
-      success: true,
-      message: 'Token refreshed successfully',
-      data: responseData,
-    });
+  res.json({
+    success: true,
+    message: 'Token refreshed successfully',
+    data: tokens,
   });
+});
+
 
   // -------------------- LOGOUT --------------------
   logout = asyncHandler(async (req: Request, res: Response) => {
-    const userId = req.user?.id;
-    
-    // Try to get refresh token from cookie first, then from body
-    let refreshToken = CookieUtil.extractTokenFromCookie(req.headers.cookie, 'refreshToken');
-    
-    if (!refreshToken) {
-      refreshToken = req.body.refreshToken;
-    }
+  const { refreshToken, userId } = req.body;
+  if (userId && refreshToken) {
+    await this.authService.logout(userId, refreshToken);
+  }
 
-    if (userId && refreshToken) {
-      await this.authService.logout(userId, refreshToken);
-    }
-
-    // Clear authentication cookies
-    CookieUtil.clearAuthCookies(res);
-
-    logger.info('User logged out', { userId });
-
-    res.json({
-      success: true,
-      message: 'Logout successful',
-    });
+  res.json({
+    success: true,
+    message: 'Logout successful',
   });
+});
 
   // -------------------- GET PROFILE --------------------
   getProfile = asyncHandler(async (req: Request, res: Response) => {

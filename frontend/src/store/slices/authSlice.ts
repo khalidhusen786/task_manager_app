@@ -1,38 +1,87 @@
-// ===== MINIMAL CHANGES TO YOUR EXISTING AUTH SLICE =====
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import type { User, AuthState, LoginFormData, RegisterFormData ,RegisterApiPayload} from '../../types';
+import type { User, AuthState, LoginFormData, RegisterFormData, RegisterApiPayload } from '../../types';
 import authService from '../../services/authService';
 
-// Keep your existing initial state
+interface AuthResponse {
+  user: User;
+  accessToken: string;
+  refreshToken: string;
+}
+
 const initialState: AuthState = {
   user: null,
+  accessToken: null,
+  refreshToken: null,
   isAuthenticated: false,
   isLoading: false,
   error: null,
 };
 
-// Keep ALL your existing thunks exactly as they are
-export const registerUser = createAsyncThunk(
-  'auth/register',
-  async (userData: RegisterApiPayload, { rejectWithValue }) => {
-    try {
-      const response = await authService.register(userData);
-      return response.data?.user as User;
-    } catch (error: any) {
-      return rejectWithValue(error.message || 'Registration failed');
-    }
-  }
-);
-
-
 export const loginUser = createAsyncThunk(
   'auth/login',
   async (credentials: LoginFormData, { rejectWithValue }) => {
     try {
+      console.log('🔄 Starting login process...');
       const response = await authService.login(credentials);
-      return response.data?.user as User;
+      
+      console.log('🚀 AuthService login response:', response);
+      
+      if (!response.data) {
+        console.error('❌ No data in login response');
+        return rejectWithValue('Invalid response structure - no data');
+      }
+
+      const { user, accessToken, refreshToken } = response.data;
+      
+      console.log('🚀 Extracted login data:', {
+        hasUser: !!user,
+        hasAccessToken: !!accessToken,
+        hasRefreshToken: !!refreshToken,
+        userEmail: user?.email,
+        tokenPreview: accessToken?.substring(0, 20) + '...',
+      });
+
+      // Validate all required fields
+      if (!user || !accessToken || !refreshToken) {
+        console.error('❌ Missing required login fields:', { 
+          user: !!user, 
+          accessToken: !!accessToken, 
+          refreshToken: !!refreshToken 
+        });
+        return rejectWithValue('Missing required authentication data');
+      }
+
+      console.log('✅ Login data validation passed, returning to Redux...');
+      return { user, accessToken, refreshToken };
+      
     } catch (error: any) {
+      console.error('❌ Login error:', error);
       return rejectWithValue(error.message || 'Login failed');
+    }
+  }
+);
+
+export const registerUser = createAsyncThunk(
+  'auth/register',
+  async (userData: RegisterApiPayload, { rejectWithValue }) => {
+    try {
+      console.log('🔄 Starting registration process...');
+      const response = await authService.register(userData);
+      
+      if (!response.data) {
+        return rejectWithValue('Invalid response structure - no data');
+      }
+
+      const { user, accessToken, refreshToken } = response.data;
+      
+      if (!user || !accessToken || !refreshToken) {
+        return rejectWithValue('Missing required authentication data');
+      }
+
+      return { user, accessToken, refreshToken };
+    } catch (error: any) {
+      console.error('❌ Registration error:', error);
+      return rejectWithValue(error.message || 'Registration failed');
     }
   }
 );
@@ -41,10 +90,14 @@ export const logoutUser = createAsyncThunk(
   'auth/logout',
   async (_, { rejectWithValue }) => {
     try {
+      console.log('🔄 Starting logout process...');
       await authService.logout();
+      console.log('✅ Logout successful');
       return true;
     } catch (error: any) {
-      return rejectWithValue(error.message || 'Logout failed');
+      console.error('❌ Logout error (proceeding anyway):', error);
+      // Even if logout fails on server, we still want to clear local state
+      return true;
     }
   }
 );
@@ -53,9 +106,23 @@ export const refreshToken = createAsyncThunk(
   'auth/refreshToken',
   async (_, { rejectWithValue }) => {
     try {
-      await authService.refreshToken();
-      return true;
+      console.log('🔄 Starting token refresh...');
+      const response = await authService.refreshToken();
+      
+      if (!response.data) {
+        return rejectWithValue('Invalid refresh response structure');
+      }
+
+      const { accessToken, refreshToken } = response.data;
+      
+      if (!accessToken || !refreshToken) {
+        return rejectWithValue('Missing tokens in refresh response');
+      }
+
+      console.log('✅ Token refresh successful');
+      return { accessToken, refreshToken };
     } catch (error: any) {
+      console.error('❌ Token refresh error:', error);
       return rejectWithValue(error.message || 'Token refresh failed');
     }
   }
@@ -68,13 +135,11 @@ export const getUserProfile = createAsyncThunk(
       const response = await authService.getProfile();
       return response.data as User;
     } catch (error: any) {
-      console.log('getUserProfile failed:', error.message);
       return rejectWithValue(error.message || 'Failed to get profile');
     }
   }
 );
 
-// Keep your existing reducers, just add one new action
 const authSlice = createSlice({
   name: 'auth',
   initialState,
@@ -87,29 +152,82 @@ const authSlice = createSlice({
       state.isAuthenticated = true;
     },
     clearUser: (state) => {
+      console.log('🧹 Clearing all auth state (Redux-persist will handle persistence)');
       state.user = null;
+      state.accessToken = null;
+      state.refreshToken = null;
       state.isAuthenticated = false;
       state.error = null;
+      state.isLoading = false;
     },
-    // ADD THIS NEW ACTION - only change needed
-    setAuthFromPersist: (state, action: PayloadAction<{ user: User | null; isAuthenticated: boolean }>) => {
+    setAuthFromPersist: (state, action: PayloadAction<{
+      user: User | null;
+      accessToken: string | null;
+      refreshToken: string | null;
+      isAuthenticated: boolean;
+    }>) => {
+      console.log('🔄 Restoring auth from persist:', action.payload);
       state.user = action.payload.user;
+      state.accessToken = action.payload.accessToken;
+      state.refreshToken = action.payload.refreshToken;
       state.isAuthenticated = action.payload.isAuthenticated;
       state.error = null;
       state.isLoading = false;
-    }
+    },
   },
   extraReducers: (builder) => {
-    // Keep all your existing extraReducers exactly as they are
-    // Register
+    // Login cases
+    builder
+      .addCase(loginUser.pending, (state) => {
+        console.log('⏳ Login pending...');
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(loginUser.fulfilled, (state, action: PayloadAction<AuthResponse>) => {
+        console.log('✅ Login fulfilled - Redux state will be updated');
+        console.log('✅ Payload received:', {
+          hasUser: !!action.payload.user,
+          hasAccessToken: !!action.payload.accessToken,
+          hasRefreshToken: !!action.payload.refreshToken,
+        });
+        
+        state.isLoading = false;
+        state.user = action.payload.user;
+        state.accessToken = action.payload.accessToken;
+        state.refreshToken = action.payload.refreshToken;
+        state.isAuthenticated = true;
+        state.error = null;
+        
+        console.log('✅ Redux auth state updated successfully');
+        console.log('✅ State now contains:', {
+          hasUser: !!state.user,
+          hasAccessToken: !!state.accessToken,
+          hasRefreshToken: !!state.refreshToken,
+          isAuthenticated: state.isAuthenticated,
+        });
+      })
+      .addCase(loginUser.rejected, (state, action) => {
+        console.log('❌ Login rejected:', action.payload);
+        state.isLoading = false;
+        state.error = action.payload as string;
+        state.user = null;
+        state.accessToken = null;
+        state.refreshToken = null;
+        state.isAuthenticated = false;
+      });
+
+    // Register cases
     builder
       .addCase(registerUser.pending, (state) => {
         state.isLoading = true;
         state.error = null;
       })
-      .addCase(registerUser.fulfilled, (state, action: PayloadAction<User>) => {
+      .addCase(registerUser.fulfilled, (state, action: PayloadAction<AuthResponse>) => {
+        console.log('✅ Registration fulfilled');
         state.isLoading = false;
-        state.user = action.payload;
+        state.user = action.payload.user;
+        state.accessToken = action.payload.accessToken;
+        state.refreshToken = action.payload.refreshToken;
         state.isAuthenticated = true;
         state.error = null;
       })
@@ -118,60 +236,40 @@ const authSlice = createSlice({
         state.error = action.payload as string;
       });
 
-    // Login
+    // Logout cases
     builder
-      .addCase(loginUser.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
-      })
-      .addCase(loginUser.fulfilled, (state, action: PayloadAction<User>) => {
-        state.isLoading = false;
-        state.user = action.payload;
-        state.isAuthenticated = true;
-        state.error = null;
-      })
-      .addCase(loginUser.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.payload as string;
-      });
-
-    // Logout
-    builder
-      .addCase(logoutUser.pending, (state) => {
-        state.isLoading = true;
-      })
       .addCase(logoutUser.fulfilled, (state) => {
-        state.isLoading = false;
+        console.log('✅ Logout fulfilled - clearing state');
         state.user = null;
+        state.accessToken = null;
+        state.refreshToken = null;
         state.isAuthenticated = false;
         state.error = null;
-      })
-      .addCase(logoutUser.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload as string;
       });
 
-    // Refresh Token
+    // Refresh token cases
     builder
-      .addCase(refreshToken.pending, (state) => {
-        state.isLoading = true;
-      })
-      .addCase(refreshToken.fulfilled, (state) => {
+      .addCase(refreshToken.fulfilled, (state, action: PayloadAction<{ accessToken: string; refreshToken: string }>) => {
+        console.log('✅ Token refresh fulfilled');
+        state.accessToken = action.payload.accessToken;
+        state.refreshToken = action.payload.refreshToken;
+        state.isAuthenticated = true;
         state.isLoading = false;
+        state.error = null;
       })
       .addCase(refreshToken.rejected, (state, action) => {
-        state.isLoading = false;
+        console.log('❌ Token refresh rejected - clearing tokens');
+        state.accessToken = null;
+        state.refreshToken = null;
         state.user = null;
         state.isAuthenticated = false;
+        state.isLoading = false;
         state.error = action.payload as string;
       });
 
-    // Get Profile - ONLY CHANGE: Don't auto-clear on failure
+    // Get profile cases
     builder
-      .addCase(getUserProfile.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
-      })
       .addCase(getUserProfile.fulfilled, (state, action: PayloadAction<User>) => {
         state.isLoading = false;
         state.user = action.payload;
@@ -182,17 +280,14 @@ const authSlice = createSlice({
         state.isLoading = false;
         state.error = action.payload as string;
         
-        // ONLY change: Only clear user state for auth-related errors
         const errorMessage = action.payload as string;
         if (errorMessage?.includes('token') || errorMessage?.includes('authenticated') || errorMessage?.includes('401')) {
           state.user = null;
           state.isAuthenticated = false;
         }
-        // For network errors, keep user state intact
       });
   },
 });
 
-// Export all your existing actions + the new one
 export const { clearError, setUser, clearUser, setAuthFromPersist } = authSlice.actions;
 export default authSlice.reducer;

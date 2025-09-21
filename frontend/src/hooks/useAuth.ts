@@ -1,13 +1,12 @@
-// ===== AUTH HOOK =====
-import { useAppSelector } from './useAppDispatch';
+// src/hooks/useAuth.ts
+import { useSelector } from 'react-redux';
+import type { RootState } from '../store';
 
 export const useAuth = () => {
-  const { user, isAuthenticated, isLoading, error } = useAppSelector((state) => state.auth);
+  const authState = useSelector((state: RootState) => state.auth);
 
-  return {
-    user,
-    isAuthenticated,
-    isLoading,
-    error,
-  };
+  const isAuthenticated = authState.isAuthenticated;
+  const isLoading = authState.isLoading;
+
+  return { isAuthenticated, isLoading, user: authState.user, accessToken: authState.accessToken };
 };

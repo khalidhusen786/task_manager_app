@@ -9,6 +9,7 @@ export { default as Modal } from './Modal';
 export { default as LoadingSpinner } from './LoadingSpinner';
 export { default as Alert } from './Alert';
 export { default as ConfirmDialog } from './ConfirmDialog';
+export { default as Toast } from './Toast';
 
 export type { ButtonProps } from './Button';
 export type { InputProps } from './Input';

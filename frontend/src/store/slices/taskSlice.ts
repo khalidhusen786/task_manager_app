@@ -178,7 +178,7 @@ const taskSlice = createSlice({
       })
       .addCase(fetchTask.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.currentTask = action.payload?.data as Task;
+        state.currentTask = action.payload?.data?.task as Task;
         state.error = null;
       })
       .addCase(fetchTask.rejected, (state, action) => {
@@ -196,7 +196,7 @@ const taskSlice = createSlice({
         state.isLoading = false;
         
         // Handle your backend response structure
-        const newTask = action.payload?.data;
+        const newTask = action.payload?.data?.task;
         if (newTask) {
           state.tasks.unshift(newTask);
         }
@@ -212,7 +212,7 @@ const taskSlice = createSlice({
     builder
      .addCase(updateTask.fulfilled, (state, action) => {
         state.isLoading = false;
-        const updatedTask = action.payload?.data;
+        const updatedTask = action.payload?.data?.task;
         if (updatedTask) {
           const index = state.tasks.findIndex(task => task._id === updatedTask._id);
           if (index !== -1) {
@@ -268,7 +268,7 @@ const taskSlice = createSlice({
     builder
    .addCase(fetchTaskStats.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.stats = action.payload?.data;
+        state.stats = action.payload?.data?.stats;
         state.error = null;
       });
   },
