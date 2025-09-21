@@ -37,14 +37,18 @@ jobs:
           npm ci
           npm run build
         env:
-          VITE_API_BASE_URL: http://localhost:5000/api
+          VITE_API_BASE_URL: ${{ secrets.API_BASE_URL }}
 
-      # 5. Deploy Backend to Railway
+      # 5. Deploy Backend to Railway (using Railway CLI)
+      - name: Install Railway CLI
+        run: npm install -g railway
+
+      - name: Login to Railway
+        run: railway login --apiKey ${{ secrets.RAILWAY_TOKEN }}
+
       - name: Deploy backend to Railway
-        uses: railwayapp/railway-deploy@v1
-        with:
-          railway-token: ${{ secrets.RAILWAY_TOKEN }}
-          service: ${{ secrets.RAILWAY_SERVICE_ID }}
+        working-directory: ./backend
+        run: railway up --detach --service ${{ secrets.RAILWAY_SERVICE_ID }}
 
       # 6. Deploy Frontend to Vercel
       - name: Deploy frontend to Vercel
@@ -55,3 +59,7 @@ jobs:
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
           working-directory: ./frontend
           vercel-args: '--prod'
+
+      # 7. Notify success
+      - name: Deployment successful
+        run: echo "✅ Backend deployed to Railway & Frontend deployed to Vercel"
