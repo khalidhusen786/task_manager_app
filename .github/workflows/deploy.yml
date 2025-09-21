@@ -37,8 +37,6 @@ jobs:
           npm ci
           tsc --noEmit --skipLibCheck
           npm run build
-        env:
-          VITE_API_BASE_URL: ${{ secrets.API_BASE_URL }}
 
       # 5. Deploy Backend to Railway (using Railway CLI)
       - name: Install Railway CLI
