@@ -48,7 +48,7 @@ jobs:
         working-directory: ./backend
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-        run: railway up --detach
+        run: railway up --detach --service ${{ secrets.RAILWAY_SERVICE_ID }}
 
       # 6. Deploy Frontend to Vercel
       - name: Deploy frontend to Vercel
