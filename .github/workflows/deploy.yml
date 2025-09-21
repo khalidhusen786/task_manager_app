@@ -41,7 +41,7 @@ jobs:
 
       # 5. Deploy Backend to Railway
       - name: Deploy backend to Railway
-        uses: railway-app/railway-deploy@v1
+        uses: railwayapp/railway-deploy@v1
         with:
           railway-token: ${{ secrets.RAILWAY_TOKEN }}
           service: ${{ secrets.RAILWAY_SERVICE_ID }}
