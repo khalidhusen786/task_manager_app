@@ -42,6 +42,8 @@ interface JWTConfig {
 interface RateLimitConfig {
   windowMs: number;
   max: number;
+  enabled: boolean; // <-- add this
+
 }
 
 interface AppConfig {
@@ -74,6 +76,8 @@ export const config: AppConfig = {
   rateLimit: {
     windowMs: env.RATE_LIMIT_WINDOW_MS,
     max: env.RATE_LIMIT_MAX,
+    enabled: env.NODE_ENV === "production", // only enable in production
+
   },
   allowedOrigins: env.ALLOWED_ORIGINS.split(","),
   nodeEnv: env.NODE_ENV,

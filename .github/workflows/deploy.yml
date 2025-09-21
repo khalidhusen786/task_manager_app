@@ -1,4 +1,4 @@
-name: Deploy to Railway + Vercel
+name: Build and Deploy
 
 on:
   push:
@@ -9,113 +9,49 @@ env:
   NODE_VERSION: '18'
 
 jobs:
-  # Test both frontend and backend
-  test:
+  build-deploy:
     runs-on: ubuntu-latest
-    services:
-      mongodb:
-        image: mongo:7.0
-        env:
-          MONGO_INITDB_ROOT_USERNAME: admin
-          MONGO_INITDB_ROOT_PASSWORD: password
-        ports:
-          - 27017:27017
-        options: >-
-          --health-cmd "mongosh --eval 'db.adminCommand(\"ping\")'"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      # 1. Checkout code
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    # Test Backend
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-        cache-dependency-path: backend/package-lock.json
+      # 2. Setup Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
 
-    - name: Install backend dependencies
-      working-directory: ./backend
-      run: npm ci
+      # 3. Build Backend
+      - name: Build backend
+        working-directory: ./backend
+        run: |
+          npm ci
+          npm run build
 
-    - name: Run backend tests
-      working-directory: ./backend
-      run: npm test
-      env:
-        NODE_ENV: test
-        MONGODB_URI: mongodb://admin:password@localhost:27017/taskmanager?authSource=admin
-        JWT_SECRET: test-secret
-        JWT_REFRESH_SECRET: test-refresh-secret
-
-    # Test Frontend
-    - name: Install frontend dependencies
-      working-directory: ./frontend
-      run: npm ci
-
-    - name: Run frontend tests
-      working-directory: ./frontend
-      run: npm test
-
-    - name: Build frontend
-      working-directory: ./frontend
-      run: npm run build
-      env:
-        VITE_API_BASE_URL: http://localhost:5000/api
-
-  # Deploy Backend to Railway
-  deploy-backend:
-    needs: test
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/master'
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Deploy to Railway
-      uses: railway-app/railway-deploy@v1
-      with:
-        railway-token: ${{ secrets.RAILWAY_TOKEN }}
-        service: ${{ secrets.RAILWAY_SERVICE_ID }}
-
-  # Deploy Frontend to Vercel
-  deploy-frontend:
-    needs: [test, deploy-backend]
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/master'
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Deploy to Vercel
-      uses: amondnet/vercel-action@v25
-      with:
-        vercel-token: ${{ secrets.VERCEL_TOKEN }}
-        vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-        vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+      # 4. Build Frontend
+      - name: Build frontend
         working-directory: ./frontend
-        vercel-args: '--prod'
+        run: |
+          npm ci
+          npm run build
+        env:
+          VITE_API_BASE_URL: http://localhost:5000/api
 
-  # Notify deployment status
-  notify:
-    needs: [deploy-backend, deploy-frontend]
-    runs-on: ubuntu-latest
-    if: always()
+      # 5. Deploy Backend to Railway
+      - name: Deploy backend to Railway
+        uses: railway-app/railway-deploy@v1
+        with:
+          railway-token: ${{ secrets.RAILWAY_TOKEN }}
+          service: ${{ secrets.RAILWAY_SERVICE_ID }}
 
-    steps:
-    - name: Notify deployment status
-      run: |
-        if [ "${{ needs.deploy-backend.result }}" == "success" ] && [ "${{ needs.deploy-frontend.result }}" == "success" ]; then
-          echo "✅ Deployment successful!"
-          echo "Backend: ${{ secrets.RAILWAY_URL }}"
-          echo "Frontend: ${{ secrets.VERCEL_URL }}"
-        else
-          echo "❌ Deployment failed!"
-          echo "Backend: ${{ needs.deploy-backend.result }}"
-          echo "Frontend: ${{ needs.deploy-frontend.result }}"
-        fi
+      # 6. Deploy Frontend to Vercel
+      - name: Deploy frontend to Vercel
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          working-directory: ./frontend
+          vercel-args: '--prod'

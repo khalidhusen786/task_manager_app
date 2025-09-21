@@ -13,6 +13,11 @@ import taskRoutes from "./routes/taskRoutes";
 import healthRoutes from "./routes/healthRoutes";
 import { errorHandler } from "./middlewares/errorMiddleware";
 
+
+// Debug environment
+console.log("🔍 NODE_ENV:", process.env.NODE_ENV);
+console.log("🔍 Should connect to DB:", process.env.NODE_ENV !== 'test');
+
 const app = express();
 
 // --------- Middleware ---------
@@ -39,16 +44,22 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(morgan(config.nodeEnv === 'production' ? 'combined' : 'dev'));
 
-app.use(rateLimit({
-  windowMs: config.rateLimit.windowMs,
-  max: config.rateLimit.max,
-  message: {
-    success: false,
-    message: 'Too many requests, please try again later.',
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-}));
+if (config.rateLimit.enabled) {
+  app.use(rateLimit({
+    windowMs: config.rateLimit.windowMs,
+    max: config.rateLimit.max,
+    message: {
+      success: false,
+      message: 'Too many requests, please try again later.',
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+  }));
+} else {
+  console.log(`⚡ Rate limiting disabled in ${config.nodeEnv}`);
+}
+
+
 
 // --------- Database connection ---------
 const connectDB = async () => {
@@ -62,7 +73,11 @@ const connectDB = async () => {
   }
 };
 
-connectDB();
+// connectDB();
+// Only connect to database if NOT in test environment
+if (process.env.NODE_ENV !== 'test') {
+  connectDB();
+}
 // Only connect automatically if NOT in test environmen
 // --------- Routes ---------
 app.use("/api/auth", authRoutes);
