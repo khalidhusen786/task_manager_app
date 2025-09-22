@@ -33,23 +33,45 @@ export function formatDateTime(date: string | Date): string {
 export function formatRelativeTime(date: string | Date): string {
   const d = new Date(date);
   const now = new Date();
-  const diffInSeconds = Math.floor((now.getTime() - d.getTime()) / 1000);
+  const diffInSeconds = Math.floor((d.getTime() - now.getTime()) / 1000); // notice reversed order
 
-  if (diffInSeconds < 60) {
-    return 'Just now';
-  } else if (diffInSeconds < 3600) {
-    const minutes = Math.floor(diffInSeconds / 60);
-    return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
-  } else if (diffInSeconds < 86400) {
-    const hours = Math.floor(diffInSeconds / 3600);
-    return `${hours} hour${hours > 1 ? 's' : ''} ago`;
-  } else if (diffInSeconds < 2592000) {
-    const days = Math.floor(diffInSeconds / 86400);
-    return `${days} day${days > 1 ? 's' : ''} ago`;
+  if (diffInSeconds < 0) {
+    // Past date
+    const pastDiff = Math.abs(diffInSeconds);
+
+    if (pastDiff < 60) {
+      return 'Just now';
+    } else if (pastDiff < 3600) {
+      const minutes = Math.floor(pastDiff / 60);
+      return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+    } else if (pastDiff < 86400) {
+      const hours = Math.floor(pastDiff / 3600);
+      return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+    } else if (pastDiff < 2592000) {
+      const days = Math.floor(pastDiff / 86400);
+      return `${days} day${days > 1 ? 's' : ''} ago`;
+    } else {
+      return formatDate(d);
+    }
   } else {
-    return formatDate(d);
+    // Future date (like a due date)
+    if (diffInSeconds < 60) {
+      return 'In a few seconds';
+    } else if (diffInSeconds < 3600) {
+      const minutes = Math.floor(diffInSeconds / 60);
+      return `In ${minutes} minute${minutes > 1 ? 's' : ''}`;
+    } else if (diffInSeconds < 86400) {
+      const hours = Math.floor(diffInSeconds / 3600);
+      return `In ${hours} hour${hours > 1 ? 's' : ''}`;
+    } else if (diffInSeconds < 2592000) {
+      const days = Math.floor(diffInSeconds / 86400);
+      return `In ${days} day${days > 1 ? 's' : ''}`;
+    } else {
+      return formatDate(d);
+    }
   }
 }
+
 
 // Check if date is overdue
 export function isOverdue(date: string | Date): boolean {
