@@ -44,8 +44,6 @@ const LoginPage: React.FC = () => {
     const onSubmit = async (data: LoginFormData) => {
       try {
         const result = await dispatch(loginUser(data)).unwrap();
-        console.log('📥 Login action completed:', result);
-        console.log('📥 Result data:', result);
         navigate(ROUTES.DASHBOARD);
         addToast({ type: 'success', message: apiUtils.getSuccessMessage('login') });
       } catch (error) {
