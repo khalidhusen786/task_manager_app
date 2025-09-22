@@ -31,6 +31,8 @@ const LoginPage: React.FC = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const { isLoading, error } = useAppSelector((state) => state.auth);
+  // Hide refresh/token-related technical errors from normal users
+  const displayError = typeof error === 'string' && !/token|refresh/i.test(error) ? error : null;
   const { addToast } = useToast();
 
   const {
@@ -94,9 +96,9 @@ const LoginPage: React.FC = () => {
             </CardHeader>
             <CardContent>
               <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
-                {error && (
+                {displayError && (
                   <Alert variant="error" onClose={clearErrorMessage}>
-                    {error}
+                    {displayError}
                   </Alert>
                 )}
 

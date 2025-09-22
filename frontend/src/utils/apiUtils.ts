@@ -62,56 +62,12 @@ export class ApiErrorHandler {
   }
 
   static getErrorMessage(action: string, error: ApiError): string {
-    const { message, status } = error;
-    
-    // Handle specific status codes
-    if (status === 401) {
-      return 'Please log in to continue';
+    // Always prefer the backend-provided message verbatim
+    if (error?.message) {
+      return error.message;
     }
-    
-    if (status === 403) {
-      return 'You do not have permission to perform this action';
-    }
-    
-    if (status === 404) {
-      return 'The requested resource was not found';
-    }
-    
-    if (status === 409) {
-      return 'This resource already exists';
-    }
-    
-    if (status === 422) {
-      return 'Please check your input and try again';
-    }
-    
-    if (status === 429) {
-      return 'Too many requests. Please try again later';
-    }
-    
-    if (status >= 500) {
-      return 'Server error. Please try again later';
-    }
-    
-    // Handle specific error messages
-    if (message.includes('email') && message.includes('already')) {
-      return 'An account with this email already exists';
-    }
-    
-    if (message.includes('password')) {
-      return 'Invalid password. Please try again';
-    }
-    
-    if (message.includes('token')) {
-      return 'Session expired. Please log in again';
-    }
-    
-    if (message.includes('validation')) {
-      return 'Please check your input and try again';
-    }
-    
-    // Return the original message if no specific handling
-    return message || 'An unexpected error occurred';
+    // Fallback to a generic message only if backend message is unavailable
+    return 'An unexpected error occurred';
   }
 
   static isSuccessResponse(response: ApiResponse): boolean {

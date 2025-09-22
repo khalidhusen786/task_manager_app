@@ -269,7 +269,8 @@ const TaskItem: React.FC<{ task: Task }> = ({ task }) => {
               dispatch(fetchTaskStats()).unwrap().catch(() => {}),
             ]);
           } catch (e: any) {
-            addToast({ type: 'error', message: e?.message || 'Action failed.' });
+            const message = typeof e === 'string' ? e : (e?.message || 'Action failed.');
+            addToast({ type: 'error', message, details: e?.details });
           } finally {
             setConfirmOpen(null);
             setIsMenuOpen(false);

@@ -7,9 +7,10 @@ interface ToastProps {
   type: ToastType;
   message: string;
   onClose: () => void;
+  details?: any;
 }
 
-const Toast: React.FC<ToastProps> = ({ type, message, onClose }) => {
+const Toast: React.FC<ToastProps> = ({ type, message, onClose, details }) => {
   const styles: Record<ToastType, string> = {
     success: 'bg-green-50 text-green-800 border-green-200',
     error: 'bg-red-50 text-red-800 border-red-200',
@@ -23,6 +24,24 @@ const Toast: React.FC<ToastProps> = ({ type, message, onClose }) => {
         <p className="text-sm leading-5">{message}</p>
         <button onClick={onClose} className="text-current/60 hover:text-current">✕</button>
       </div>
+      {details && (
+        <div className="mt-2 text-xs text-current/80">
+          {Array.isArray(details) ? (
+            <ul className="list-disc pl-5 space-y-1">
+              {details.map((d: any, idx: number) => (
+                <li key={idx}>
+                  {d.field ? <span className="font-semibold">{d.field}: </span> : null}
+                  {d.message || JSON.stringify(d)}
+                </li>
+              ))}
+            </ul>
+          ) : typeof details === 'object' ? (
+            <pre className="whitespace-pre-wrap break-words">{JSON.stringify(details, null, 2)}</pre>
+          ) : (
+            <span>{String(details)}</span>
+          )}
+        </div>
+      )}
     </div>
   );
 };

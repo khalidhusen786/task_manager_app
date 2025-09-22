@@ -34,7 +34,7 @@ export const fetchTasks = createAsyncThunk(
       return response;
     } catch (error: any) {
       const errorDetails = apiUtils.extractErrorDetails(error);
-      return rejectWithValue(apiUtils.getErrorMessage('fetchTasks', errorDetails));
+      return rejectWithValue({ message: errorDetails.message, details: errorDetails.details });
     }
   }
 );
@@ -47,7 +47,7 @@ export const fetchTask = createAsyncThunk(
       return response;
     } catch (error: any) {
       const errorDetails = apiUtils.extractErrorDetails(error);
-      return rejectWithValue(apiUtils.getErrorMessage('fetchTask', errorDetails));
+      return rejectWithValue({ message: errorDetails.message, details: errorDetails.details });
     }
   }
 );
@@ -60,7 +60,7 @@ export const createTask = createAsyncThunk(
       return response;
     } catch (error: any) {
       const errorDetails = apiUtils.extractErrorDetails(error);
-      return rejectWithValue(apiUtils.getErrorMessage('createTask', errorDetails));
+      return rejectWithValue({ message: errorDetails.message, details: errorDetails.details });
     }
   }
 );
@@ -73,7 +73,7 @@ export const updateTask = createAsyncThunk(
       return response;
     } catch (error: any) {
       const errorDetails = apiUtils.extractErrorDetails(error);
-      return rejectWithValue(apiUtils.getErrorMessage('updateTask', errorDetails));
+      return rejectWithValue({ message: errorDetails.message, details: errorDetails.details });
     }
   }
 );
@@ -87,7 +87,7 @@ export const deleteTask = createAsyncThunk(
       return id;
     } catch (error: any) {
       const errorDetails = apiUtils.extractErrorDetails(error);
-      return rejectWithValue(apiUtils.getErrorMessage('deleteTask', errorDetails));
+      return rejectWithValue({ message: errorDetails.message, details: errorDetails.details });
     }
   }
 );
@@ -100,7 +100,7 @@ export const deleteManyTasks = createAsyncThunk(
       return { taskIds, deletedCount: response.data.deletedCount };
     } catch (error: any) {
       const errorDetails = apiUtils.extractErrorDetails(error);
-      return rejectWithValue(apiUtils.getErrorMessage('deleteTasks', errorDetails));
+      return rejectWithValue({ message: errorDetails.message, details: errorDetails.details });
     }
   }
 );
@@ -114,7 +114,7 @@ export const fetchTaskStats = createAsyncThunk(
       return response;
     } catch (error: any) {
       const errorDetails = apiUtils.extractErrorDetails(error);
-      return rejectWithValue(apiUtils.getErrorMessage('fetchStats', errorDetails));
+      return rejectWithValue(errorDetails.message);
     }
   }
 );
@@ -175,7 +175,7 @@ const taskSlice = createSlice({
       })
       .addCase(fetchTasks.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload as string;
+        state.error = typeof action.payload === 'string' ? action.payload : (action.payload as any)?.message || 'Failed to load tasks';
       });
 
     // Fetch Single Task
@@ -191,7 +191,7 @@ const taskSlice = createSlice({
       })
       .addCase(fetchTask.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload as string;
+        state.error = typeof action.payload === 'string' ? action.payload : (action.payload as any)?.message || 'Failed to load task';
       });
 
     // Create Task
@@ -212,7 +212,7 @@ const taskSlice = createSlice({
       })
       .addCase(createTask.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload as string;
+        state.error = typeof action.payload === 'string' ? action.payload : (action.payload as any)?.message || 'Failed to create task';
       });
 
 
@@ -249,7 +249,7 @@ const taskSlice = createSlice({
       })
       .addCase(deleteTask.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload as string;
+        state.error = typeof action.payload === 'string' ? action.payload : (action.payload as any)?.message || 'Failed to delete task';
       });
 
     // Delete Many Tasks
@@ -268,7 +268,7 @@ const taskSlice = createSlice({
       })
       .addCase(deleteManyTasks.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload as string;
+        state.error = typeof action.payload === 'string' ? action.payload : (action.payload as any)?.message || 'Failed to delete tasks';
       });
 
 

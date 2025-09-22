@@ -38,6 +38,7 @@ const RegisterPage: React.FC = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const { isLoading, error } = useAppSelector((state) => state.auth);
+  const displayError = typeof error === 'string' ? error : (error as any)?.message;
   const { addToast } = useToast();
 
   const {
@@ -61,7 +62,8 @@ const onSubmit = async (data: RegisterFormData) => {
     navigate(ROUTES.DASHBOARD);
     addToast({ type: 'success', message: 'Account created. Welcome!' });
   } catch (error) {
-    addToast({ type: 'error', message: 'Registration failed. Please try again.' });
+    const message = typeof error === 'string' ? error : 'Registration failed. Please try again.';
+    addToast({ type: 'error', message });
   }
 };
 
@@ -108,9 +110,9 @@ const onSubmit = async (data: RegisterFormData) => {
             </CardHeader>
             <CardContent>
               <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
-                {error && (
+                {displayError && (
                   <Alert variant="error" onClose={clearErrorMessage}>
-                    {error}
+                    {displayError}
                   </Alert>
                 )}
 

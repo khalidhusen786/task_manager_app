@@ -58,7 +58,7 @@ export const loginUser = createAsyncThunk(
     } catch (error: any) {
       console.error('❌ Login error:', error);
       const errorDetails = apiUtils.extractErrorDetails(error);
-      return rejectWithValue(apiUtils.getErrorMessage('login', errorDetails));
+      return rejectWithValue({ message: errorDetails.message, details: errorDetails.details });
     }
   }
 );
@@ -84,7 +84,7 @@ export const registerUser = createAsyncThunk(
     } catch (error: any) {
       console.error('❌ Registration error:', error);
       const errorDetails = apiUtils.extractErrorDetails(error);
-      return rejectWithValue(apiUtils.getErrorMessage('register', errorDetails));
+      return rejectWithValue({ message: errorDetails.message, details: errorDetails.details });
     }
   }
 );
@@ -127,7 +127,7 @@ export const refreshToken = createAsyncThunk(
     } catch (error: any) {
       console.error('❌ Token refresh error:', error);
       const errorDetails = apiUtils.extractErrorDetails(error);
-      return rejectWithValue(apiUtils.getErrorMessage('refreshToken', errorDetails));
+      return rejectWithValue({ message: errorDetails.message, details: errorDetails.details });
     }
   }
 );
@@ -140,7 +140,7 @@ export const getUserProfile = createAsyncThunk(
       return response.data as User;
     } catch (error: any) {
       const errorDetails = apiUtils.extractErrorDetails(error);
-      return rejectWithValue(apiUtils.getErrorMessage('getProfile', errorDetails));
+      return rejectWithValue({ message: errorDetails.message, details: errorDetails.details });
     }
   }
 );
@@ -214,7 +214,7 @@ const authSlice = createSlice({
       .addCase(loginUser.rejected, (state, action) => {
         console.log('❌ Login rejected:', action.payload);
         state.isLoading = false;
-        state.error = action.payload as string;
+        state.error = typeof action.payload === 'string' ? action.payload : (action.payload as any)?.message || 'Login failed';
         state.user = null;
         state.accessToken = null;
         state.refreshToken = null;
@@ -238,7 +238,7 @@ const authSlice = createSlice({
       })
       .addCase(registerUser.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload as string;
+        state.error = typeof action.payload === 'string' ? action.payload : (action.payload as any)?.message || 'Registration failed';
       });
 
     // Logout cases
@@ -270,7 +270,7 @@ const authSlice = createSlice({
         state.user = null;
         state.isAuthenticated = false;
         state.isLoading = false;
-        state.error = action.payload as string;
+        state.error = typeof action.payload === 'string' ? action.payload : (action.payload as any)?.message || 'Session expired';
       });
 
     // Get profile cases
@@ -283,9 +283,9 @@ const authSlice = createSlice({
       })
       .addCase(getUserProfile.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload as string;
+        state.error = typeof action.payload === 'string' ? action.payload : (action.payload as any)?.message || 'Failed to load profile';
         
-        const errorMessage = action.payload as string;
+        const errorMessage = (typeof action.payload === 'string' ? action.payload : (action.payload as any)?.message) as string;
         if (errorMessage?.includes('token') || errorMessage?.includes('authenticated') || errorMessage?.includes('401')) {
           state.user = null;
           state.isAuthenticated = false;

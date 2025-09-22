@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { createTask, updateTask } from '../../store/slices/taskSlice';
 import { TASK_STATUS, TASK_PRIORITY, VALIDATION_RULES } from '../../constants';
-import { X, Calendar } from 'lucide-react';
+import { X, Calendar, Clock } from 'lucide-react';
 import type { Task } from '../../types';
 import { useToast } from '../ui/ToastProvider';
 
@@ -31,10 +31,30 @@ const schema = z.object({
     .optional(),
   status: z.enum(['pending', 'in_progress', 'completed']).optional(),
   priority: z.enum(['low', 'medium', 'high']).optional(),
-  dueDate: z.string().optional(),
+  dueDate: z.string().optional(), // yyyy-MM-dd
+  dueTime: z.string().optional(), // HH:mm
 });
 
 type TaskFormData = z.infer<typeof schema>;
+
+function formatLocalDate(isoString?: string): string | undefined {
+  if (!isoString) return undefined;
+  const d = new Date(isoString);
+  if (isNaN(d.getTime())) return undefined;
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function formatLocalTime(isoString?: string): string | undefined {
+  if (!isoString) return undefined;
+  const d = new Date(isoString);
+  if (isNaN(d.getTime())) return undefined;
+  const hours = String(d.getHours()).padStart(2, '0');
+  const minutes = String(d.getMinutes()).padStart(2, '0');
+  return `${hours}:${minutes}`;
+}
 
 const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, mode, task, onSaved }) => {
   const dispatch = useAppDispatch();
@@ -52,7 +72,8 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, mode, task, onSa
       description: task?.description ?? '',
       status: task?.status ?? 'pending',
       priority: task?.priority ?? 'medium',
-      dueDate: task?.dueDate ? task.dueDate.slice(0, 16) : undefined,
+      dueDate: formatLocalDate(task?.dueDate),
+      dueTime: formatLocalTime(task?.dueDate),
     },
   });
 
@@ -62,12 +83,22 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, mode, task, onSa
       description: task?.description ?? '',
       status: task?.status ?? 'pending',
       priority: task?.priority ?? 'medium',
-      dueDate: task?.dueDate ? task.dueDate.slice(0, 16) : undefined,
+      dueDate: formatLocalDate(task?.dueDate),
+      dueTime: formatLocalTime(task?.dueDate),
     });
   }, [task, reset, mode]);
 
   const onSubmit = async (data: TaskFormData) => {
     try {
+      let dueIso: string | undefined = undefined;
+      if (data.dueDate) {
+        const timePart = data.dueTime && data.dueTime.trim() !== '' ? data.dueTime : '00:00';
+        // Construct a Date in local time
+        const localDateTime = new Date(`${data.dueDate}T${timePart}`);
+        if (!isNaN(localDateTime.getTime())) {
+          dueIso = localDateTime.toISOString();
+        }
+      }
       if (mode === 'create') {
         await dispatch(
           createTask({
@@ -75,7 +106,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, mode, task, onSa
             description: data.description || undefined,
             status: (data.status as any) ?? 'pending',
             priority: (data.priority as any) ?? 'medium',
-            dueDate: data.dueDate ? new Date(data.dueDate).toISOString() : undefined,
+            dueDate: dueIso,
           })
         ).unwrap();
         addToast({ type: 'success', message: 'Task created successfully.' });
@@ -88,7 +119,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, mode, task, onSa
               description: data.description || undefined,
               status: data.status as any,
               priority: data.priority as any,
-              dueDate: data.dueDate ? new Date(data.dueDate).toISOString() : undefined,
+              dueDate: dueIso,
             },
           })
         ).unwrap();
@@ -97,9 +128,11 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, mode, task, onSa
 
       onSaved();
       onClose();
-      if (mode === 'create') reset({ title: '', description: '', status: 'pending', priority: 'medium', dueDate: undefined });
-    } catch (error) {
-      addToast({ type: 'error', message: mode === 'create' ? 'Failed to create task.' : 'Failed to update task.' });
+      if (mode === 'create') reset({ title: '', description: '', status: 'pending', priority: 'medium', dueDate: undefined, dueTime: undefined });
+    } catch (error: any) {
+      // Thunks now reject with { message, details }
+      const backendMessage = typeof error === 'string' ? error : (error?.message || (mode === 'create' ? 'Failed to create task.' : 'Failed to update task.'));
+      addToast({ type: 'error', message: backendMessage, details: error?.details });
     }
   };
 
@@ -158,11 +191,19 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, mode, task, onSa
               </div>
               <div>
                 <label htmlFor="dueDate" className="label">Due Date</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Calendar className="h-5 w-5 text-gray-400" />
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Calendar className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <input {...register('dueDate')} type="date" className="input pl-10" />
                   </div>
-                  <input {...register('dueDate')} type="datetime-local" className="input pl-10" />
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Clock className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <input {...register('dueTime')} type="time" className="input pl-10" />
+                  </div>
                 </div>
                 {errors.dueDate && <p className="mt-1 text-sm text-red-600">{errors.dueDate.message}</p>}
               </div>
@@ -183,6 +224,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, mode, task, onSa
 };
 
 export default TaskModal;
+
 
 
 

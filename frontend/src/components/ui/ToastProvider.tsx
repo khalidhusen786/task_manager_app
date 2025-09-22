@@ -9,6 +9,7 @@ export interface ToastItem {
   type: ToastType;
   message: string;
   duration?: number; // ms
+  details?: any;
 }
 
 interface ToastContextValue {
@@ -31,6 +32,12 @@ const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   }, []);
 
   const addToast = useCallback((toast: Omit<ToastItem, 'id'>) => {
+    // Suppress technical auth errors from showing to end users
+    if (toast.type === 'error' && /token|refresh/i.test(toast.message)) {
+      console.error('Suppressed technical error toast:', toast.message);
+      return;
+    }
+
     const id = Math.random().toString(36).slice(2);
     const item: ToastItem = { id, ...toast };
     setToasts((prev) => [...prev, item]);
@@ -46,7 +53,7 @@ const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) =>
       {/* Container */}
       <div className="fixed top-4 right-4 z-[60] space-y-2">
         {toasts.map((t) => (
-          <Toast key={t.id} type={t.type} message={t.message} onClose={() => remove(t.id)} />
+          <Toast key={t.id} type={t.type} message={t.message} details={t.details} onClose={() => remove(t.id)} />
         ))}
       </div>
     </ToastContext.Provider>
