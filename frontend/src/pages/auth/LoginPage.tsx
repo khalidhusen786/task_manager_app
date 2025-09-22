@@ -10,6 +10,7 @@ import { ROUTES } from '../../constants';
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
 import { Button, Input, Card, CardHeader, CardTitle, CardDescription, CardContent, Alert } from '../../components/ui';
 import { useToast } from '../../components/ui/ToastProvider';
+import { apiUtils } from '../../utils/apiUtils';
 
 // Validation schema
 const loginSchema = z.object({
@@ -46,9 +47,10 @@ const LoginPage: React.FC = () => {
         console.log('📥 Login action completed:', result);
         console.log('📥 Result data:', result);
         navigate(ROUTES.DASHBOARD);
-        addToast({ type: 'success', message: 'Welcome back!' });
+        addToast({ type: 'success', message: apiUtils.getSuccessMessage('login') });
       } catch (error) {
-        addToast({ type: 'error', message: 'Login failed. Check your credentials.' });
+        const errorMessage = typeof error === 'string' ? error : 'Login failed. Check your credentials.';
+        addToast({ type: 'error', message: errorMessage });
       }
     };
 

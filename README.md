@@ -5,21 +5,23 @@ A full-stack task management application built with modern web technologies. Thi
 ## 🚀 Features
 
 ### Core Features
-- **User Authentication**: Secure JWT-based authentication with refresh tokens
+- **User Authentication**: Secure JWT-based authentication with refresh tokens and persistent sessions
 - **Task Management**: Create, read, update, delete tasks with full CRUD operations
-- **Advanced Filtering**: Search, filter by status/priority, and sort tasks
-- **Real-time Updates**: Optimistic updates with error handling and rollback
+- **Advanced Filtering**: Search, filter by status/priority, and sort tasks with client-side optimization
+- **Real-time Updates**: Optimistic updates with comprehensive error handling and rollback
 - **Responsive Design**: Works seamlessly on desktop, tablet, and mobile devices
 - **Task Statistics**: Dashboard with task analytics and insights
+- **Persistent Sessions**: Redux Persist for maintaining authentication across browser sessions
 
 ### Technical Features
 - **Type Safety**: Full TypeScript support across frontend and backend
-- **State Management**: Redux Toolkit for predictable state management
-- **API Design**: RESTful API with comprehensive error handling
+- **State Management**: Redux Toolkit with Redux Persist for state persistence
+- **API Design**: RESTful API with comprehensive error handling and user-friendly messages
 - **Database**: MongoDB with Mongoose ODM
-- **Security**: JWT authentication, input validation, rate limiting
+- **Security**: JWT authentication, input validation, rate limiting, and secure token refresh
 - **Testing**: Comprehensive test suite with unit, integration, and e2e tests
-- **Performance**: Optimized queries, caching, and client-side filtering
+- **Performance**: Optimized queries, client-side filtering, and debounced search
+- **Error Handling**: Intelligent error messages based on API responses and status codes
 
 ## 🛠️ Tech Stack
 
@@ -182,18 +184,36 @@ task-manager-app/
 │   │   ├── services/       # Business logic
 │   │   └── utils/          # Utility functions
 │   ├── tests/              # Test files
+│   ├── env.development     # Development environment
+│   ├── env.production      # Production environment
+│   ├── env.example         # Environment template
+│   ├── Dockerfile          # Docker configuration
+│   ├── railway.toml        # Railway deployment config
 │   └── package.json
 ├── frontend/               # Frontend React app
 │   ├── src/
 │   │   ├── components/     # React components
+│   │   │   ├── layout/     # Layout components
+│   │   │   ├── task/       # Task-related components
+│   │   │   └── ui/         # Reusable UI components
 │   │   ├── hooks/          # Custom hooks
 │   │   ├── pages/          # Page components
 │   │   ├── services/       # API services
-│   │   ├── store/          # Redux store
+│   │   ├── store/          # Redux store with persistence
 │   │   ├── types/          # TypeScript types
 │   │   └── utils/          # Utility functions
 │   ├── __tests__/          # Test files
+│   ├── env.development     # Development environment
+│   ├── env.production      # Production environment
+│   ├── env.example         # Environment template
+│   ├── Dockerfile          # Docker configuration
+│   ├── vercel.json         # Vercel deployment config
 │   └── package.json
+├── .github/workflows/      # GitHub Actions
+│   └── deploy.yml          # Main deployment workflow
+├── docker-compose.yml      # Docker Compose configuration
+├── railway.json            # Railway project configuration
+├── vercel.json             # Vercel project configuration
 └── README.md
 ```
 
@@ -321,21 +341,60 @@ VITE_LOG_LEVEL=error
 
 ## 🚀 Deployment
 
-### Backend Deployment
+### Automated Deployment (Recommended)
+The application uses GitHub Actions for simple automated deployment:
+
+- **Backend**: Deployed to Railway
+- **Frontend**: Deployed to Vercel
+- **Database**: MongoDB Atlas (shared across environments)
+
+**Deployment Process:**
+1. Push to `master` branch triggers deployment
+2. Backend builds and deploys to Railway
+3. Frontend builds and deploys to Vercel
+4. Both services use the same MongoDB Atlas database
+
+### Manual Deployment
+
+#### Backend Deployment (Railway)
 ```bash
 # Build
+cd backend
 npm run build
 
-# Start production server
-npm start
+# Deploy to Railway
+railway up --detach
 ```
 
-### Frontend Deployment
+#### Frontend Deployment (Vercel)
 ```bash
 # Build
+cd frontend
 npm run build
 
-# Deploy dist/ folder to your hosting service
+# Deploy to Vercel
+vercel --prod
+```
+
+### Environment Variables for Production
+Set these in your deployment platform:
+
+#### Railway (Backend)
+```env
+NODE_ENV=production
+MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/taskmanager
+JWT_SECRET=your-super-secure-jwt-secret
+JWT_REFRESH_SECRET=your-super-secure-refresh-secret
+COOKIE_SECRET=your-cookie-secret
+ALLOWED_ORIGINS=https://your-frontend-domain.vercel.app
+```
+
+#### Vercel (Frontend)
+```env
+VITE_API_BASE_URL=https://your-backend.railway.app/api
+VITE_NODE_ENV=production
+VITE_APP_NAME=Task Manager
+VITE_APP_VERSION=1.0.0
 ```
 
 ## 🐳 Docker Deployment
@@ -426,21 +485,28 @@ VITE_NODE_ENV=production
 ## 🔄 CI/CD Pipeline
 
 ### GitHub Actions
-The repository includes GitHub Actions workflows for:
-- **Automated Testing**: Runs on every push and PR
-- **Docker Build**: Builds and pushes Docker images
-- **Security Scanning**: Vulnerability scanning with Trivy
-- **Deployment**: Automated deployment to production
+The repository includes a simple GitHub Actions workflow for:
+- **Build Validation**: Ensures both frontend and backend build successfully
+- **Type Checking**: TypeScript compilation validation
+- **Deployment**: Automated deployment to Railway (backend) and Vercel (frontend)
 
 ### Workflow Files
-- `.github/workflows/ci-cd.yml` - Main CI/CD pipeline
-- `.github/workflows/docker-deploy.yml` - Docker deployment
+- `.github/workflows/deploy.yml` - Simple build and deploy pipeline
 
 ### Required Secrets
 Set these in your GitHub repository settings:
-- `JWT_SECRET` - JWT signing secret
-- `JWT_REFRESH_SECRET` - JWT refresh secret
-- `RAILWAY_TOKEN` - Railway deployment token (if using Railway)
+
+#### Railway (Backend)
+- `RAILWAY_TOKEN` - Railway deployment token
+- `RAILWAY_SERVICE_ID` - Railway service ID for backend
+
+#### Vercel (Frontend)
+- `VERCEL_TOKEN` - Vercel deployment token
+- `VERCEL_ORG_ID` - Vercel organization ID
+- `VERCEL_PROJECT_ID` - Vercel project ID
+
+#### Environment Variables
+- `VITE_API_BASE_URL` - Frontend API base URL for builds
 
 ## 📊 Monitoring and Health Checks
 

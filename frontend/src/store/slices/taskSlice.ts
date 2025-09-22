@@ -2,6 +2,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import type { Task, TaskState, TaskFilters, TaskFormData, TaskStats, PaginationInfo } from '../../types';
 import taskService from '../../services/taskService';
+import { apiUtils } from '../../utils/apiUtils';
 
 // Initial state
 const initialState: TaskState = {
@@ -32,7 +33,8 @@ export const fetchTasks = createAsyncThunk(
       const response = await taskService.getTasks(filters);
       return response;
     } catch (error: any) {
-      return rejectWithValue(error.message || 'Failed to fetch tasks');
+      const errorDetails = apiUtils.extractErrorDetails(error);
+      return rejectWithValue(apiUtils.getErrorMessage('fetchTasks', errorDetails));
     }
   }
 );
@@ -44,7 +46,8 @@ export const fetchTask = createAsyncThunk(
       const response = await taskService.getTask(id);
       return response;
     } catch (error: any) {
-      return rejectWithValue(error.message || 'Failed to fetch task');
+      const errorDetails = apiUtils.extractErrorDetails(error);
+      return rejectWithValue(apiUtils.getErrorMessage('fetchTask', errorDetails));
     }
   }
 );
@@ -56,7 +59,8 @@ export const createTask = createAsyncThunk(
       const response = await taskService.createTask(taskData);
       return response;
     } catch (error: any) {
-      return rejectWithValue(error.message || 'Failed to create task');
+      const errorDetails = apiUtils.extractErrorDetails(error);
+      return rejectWithValue(apiUtils.getErrorMessage('createTask', errorDetails));
     }
   }
 );
@@ -68,7 +72,8 @@ export const updateTask = createAsyncThunk(
       const response = await taskService.updateTask(id, data);
       return response;
     } catch (error: any) {
-      return rejectWithValue(error.message || 'Failed to update task');
+      const errorDetails = apiUtils.extractErrorDetails(error);
+      return rejectWithValue(apiUtils.getErrorMessage('updateTask', errorDetails));
     }
   }
 );
@@ -81,7 +86,8 @@ export const deleteTask = createAsyncThunk(
       await taskService.deleteTask(id);
       return id;
     } catch (error: any) {
-      return rejectWithValue(error.message || 'Failed to delete task');
+      const errorDetails = apiUtils.extractErrorDetails(error);
+      return rejectWithValue(apiUtils.getErrorMessage('deleteTask', errorDetails));
     }
   }
 );
@@ -93,7 +99,8 @@ export const deleteManyTasks = createAsyncThunk(
       const response = await taskService.deleteManyTasks(taskIds);
       return { taskIds, deletedCount: response.data.deletedCount };
     } catch (error: any) {
-      return rejectWithValue(error.message || 'Failed to delete tasks');
+      const errorDetails = apiUtils.extractErrorDetails(error);
+      return rejectWithValue(apiUtils.getErrorMessage('deleteTasks', errorDetails));
     }
   }
 );
@@ -106,7 +113,8 @@ export const fetchTaskStats = createAsyncThunk(
       const response = await taskService.getTaskStats();
       return response;
     } catch (error: any) {
-      return rejectWithValue(error.message || 'Failed to fetch task stats');
+      const errorDetails = apiUtils.extractErrorDetails(error);
+      return rejectWithValue(apiUtils.getErrorMessage('fetchStats', errorDetails));
     }
   }
 );
