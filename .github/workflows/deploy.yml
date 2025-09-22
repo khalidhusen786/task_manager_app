@@ -9,30 +9,76 @@ env:
   NODE_VERSION: '20'
 
 jobs:
-  build-deploy:
+  backend-deploy:
     runs-on: ubuntu-latest
-
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[backend]') || github.event_name == 'push'
+    defaults:
+      run:
+        working-directory: ./backend
     steps:
-      # 1. Checkout code
+      # Run only if backend files changed
+      - name: Check for backend changes
+        id: changes
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+
       - name: Checkout code
+        if: steps.changes.outputs.backend == 'true'
         uses: actions/checkout@v4
 
-      # 2. Setup Node.js
       - name: Setup Node.js
+        if: steps.changes.outputs.backend == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      # 3. Build Backend
       - name: Build backend
-        working-directory: ./backend
+        if: steps.changes.outputs.backend == 'true'
         run: |
           npm ci
           npm run build
 
-      # 4. Build Frontend
-      - name: Build frontend
+      - name: Install Railway CLI
+        if: steps.changes.outputs.backend == 'true'
+        run: npm install -g @railway/cli
+
+      - name: Deploy backend to Railway
+        if: steps.changes.outputs.backend == 'true'
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: railway up --detach --service ${{ secrets.RAILWAY_SERVICE_ID }}
+
+  frontend-deploy:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[frontend]') || github.event_name == 'push'
+    defaults:
+      run:
         working-directory: ./frontend
+    steps:
+      # Run only if frontend files changed
+      - name: Check for frontend changes
+        id: changes
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            frontend:
+              - 'frontend/**'
+
+      - name: Checkout code
+        if: steps.changes.outputs.frontend == 'true'
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        if: steps.changes.outputs.frontend == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Build frontend
+        if: steps.changes.outputs.frontend == 'true'
         run: |
           npm ci
           tsc --noEmit --skipLibCheck
@@ -40,18 +86,8 @@ jobs:
         env:
           VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
 
-      # 5. Deploy Backend to Railway (using Railway CLI)
-      - name: Install Railway CLI
-        run: npm install -g @railway/cli
-
-      - name: Deploy backend to Railway
-        working-directory: ./backend
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-        run: railway up --detach --service ${{ secrets.RAILWAY_SERVICE_ID }}
-
-      # 6. Deploy Frontend to Vercel
       - name: Deploy frontend to Vercel
+        if: steps.changes.outputs.frontend == 'true'
         uses: amondnet/vercel-action@v25
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
@@ -61,7 +97,3 @@ jobs:
           vercel-args: '--prod'
         env:
           VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
-
-      # 7. Notify success
-      - name: Deployment successful
-        run: echo "✅ Backend deployed to Railway & Frontend deployed to Vercel"
