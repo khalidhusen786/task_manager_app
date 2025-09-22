@@ -1,8 +1,13 @@
 // Unit tests for TaskFilters component
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
+// Mock constants to avoid import.meta usage in Jest
+jest.mock('../../constants', () => ({
+  TASK_STATUS: { PENDING: 'pending', IN_PROGRESS: 'in_progress', COMPLETED: 'completed' },
+  TASK_PRIORITY: { LOW: 'low', MEDIUM: 'medium', HIGH: 'high' }
+}));
 import TaskFilters from '../../components/task/TaskFilters';
-import type { TaskFilters as TaskFiltersType } from '../../types';
+type TaskFiltersType = any;
 
 // Mock props
 const mockFilters: TaskFiltersType = {
@@ -34,6 +39,7 @@ describe('TaskFilters', () => {
   });
 
   it('calls onFilterChange when search input changes', () => {
+    jest.useFakeTimers();
     render(
       <TaskFilters 
         filters={mockFilters} 
@@ -43,7 +49,10 @@ describe('TaskFilters', () => {
 
     const searchInput = screen.getByPlaceholderText(/search by title/i);
     fireEvent.change(searchInput, { target: { value: 'test search' } });
-
+    act(() => {
+      jest.advanceTimersByTime(350);
+    });
+    jest.useRealTimers();
     expect(mockOnFilterChange).toHaveBeenCalledWith({ search: 'test search' });
   });
 
@@ -106,9 +115,10 @@ describe('TaskFilters', () => {
     );
 
     expect(screen.getByDisplayValue('test search')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('pending')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('high')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('title')).toBeInTheDocument();
+    const selects = screen.getAllByRole('combobox') as HTMLSelectElement[];
+    expect(selects[0].value).toBe('pending');
+    expect(selects[1].value).toBe('high');
+    expect(selects[2].value).toBe('title');
   });
 
   it('handles empty filter values correctly', () => {
@@ -192,8 +202,8 @@ describe('TaskFilters', () => {
       />
     );
 
-    const card = screen.getByRole('region', { hidden: true }); // Assuming card has role
-    expect(card).toHaveClass('card');
+    const card = document.querySelector('.card') as HTMLElement;
+    expect(card).toBeTruthy();
 
     const inputs = screen.getAllByRole('textbox');
     inputs.forEach(input => {

@@ -138,42 +138,61 @@
 
 
 
-// Test setup for frontend
-/** @type {import('jest').Config} */
-export default {
-  preset: 'ts-jest',
-  testEnvironment: 'jsdom',
-  roots: ['<rootDir>/src'],
-  testMatch: [
-    '**/__tests__/**/*.ts',
-    '**/__tests__/**/*.tsx',
-    '**/?(*.)+(spec|test).ts',
-    '**/?(*.)+(spec|test).tsx'
-  ],
-  transform: {
-    '^.+\\.(ts|tsx)$': 'ts-jest',
-  },
-  transformIgnorePatterns: [
-    'node_modules/(?!msw)'
-  ],
-  setupFilesAfterEnv: ['<rootDir>/src/__tests__/setup.ts'],
-  moduleNameMapper: {
-    '^@/(.*)$': '<rootDir>/src/$1',
-    '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
-    '\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$': 'jest-transform-stub'
-  },
-  collectCoverageFrom: [
-    'src/**/*.{ts,tsx}',
-    '!src/**/*.d.ts',
-    '!src/main.tsx',
-    '!src/vite-env.d.ts',
-    '!src/__tests__/**'
-  ],
-  coverageDirectory: 'coverage',
-  coverageReporters: ['text', 'lcov', 'html'],
-  testTimeout: 10000,
-  verbose: true,
-  clearMocks: true,
-  resetMocks: true,
-  restoreMocks: true
-};
+import '@testing-library/jest-dom';
+import 'whatwg-fetch';
+
+// Polyfill TextEncoder/TextDecoder if missing
+// Ensure TextEncoder/TextDecoder exist
+if (!(globalThis as any).TextEncoder) {
+  (globalThis as any).TextEncoder = class {
+    encode(input: string) {
+      const arr = new Uint8Array(input.length);
+      for (let i = 0; i < input.length; i++) arr[i] = input.charCodeAt(i) & 0xff;
+      return arr;
+    }
+  } as any;
+}
+if (!(globalThis as any).TextDecoder) {
+  (globalThis as any).TextDecoder = class {
+    decode(input: Uint8Array) {
+      return Array.from(input).map((b) => String.fromCharCode(b)).join('');
+    }
+  } as any;
+}
+
+// Note: MSW server is configured in individual test suites that need it
+
+// Mock window.matchMedia
+Object.defineProperty(window, 'matchMedia', {
+  writable: true,
+  value: jest.fn().mockImplementation((query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: jest.fn(),
+    removeListener: jest.fn(),
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn(),
+    dispatchEvent: jest.fn(),
+  })),
+});
+
+// Mock IntersectionObserver
+(globalThis as any).IntersectionObserver = class IntersectionObserver {
+  constructor() {}
+  disconnect() {}
+  observe() {}
+  unobserve() {}
+  takeRecords() { return [] }
+} as any;
+
+// Polyfill BroadcastChannel for libraries expecting it
+if (!(globalThis as any).BroadcastChannel) {
+  (globalThis as any).BroadcastChannel = class {
+    name: string;
+    onmessage: any;
+    constructor(name: string) { this.name = name; }
+    postMessage() {}
+    close() {}
+  } as any;
+}
