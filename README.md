@@ -158,8 +158,6 @@ npm run test
 
 ## 📁 Project Structure (Layered architecture)
 
-## 📁 Project Structure (Layered architecture)
-
 task-manager-app/
 ├── backend/ # Backend API
 │ ├── src/
