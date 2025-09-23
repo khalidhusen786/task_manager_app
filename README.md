@@ -53,7 +53,7 @@ Live demo: https://task-manager-app-khalid.vercel.app/
 ## 📦 Installation
 
 ### Prerequisites
-- Node.js (v18 or higher)
+- Node.js (v20 or higher)
 - MongoDB (v6 or higher)
 - npm or yarn
 
