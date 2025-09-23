@@ -158,52 +158,51 @@ npm run test
 
 ## 📁 Project Structure (Layered architecture)
 
-```
-task-manager-app/
-├── backend/                 # Backend API
-│   ├── src/
-│   │   ├── config/         # Configuration files
-│   │   ├── controllers/    # Route controllers
-│   │   ├── middlewares/    # Express middlewares
-│   │   ├── models/         # Mongoose models
-│   │   ├── routes/         # API routes
-│   │   ├── schemas/        # Validation schemas
-│   │   ├── services/       # Business logic
-│   │   └── utils/          # Utility functions
-│   ├── tests/              # Test files
-│   ├── env.development     # Development environment
-│   ├── env.production      # Production environment
-│   ├── env.example         # Environment template
-│   ├── Dockerfile          # Docker configuration
-│   ├── railway.toml        # Railway deployment config
-│   └── package.json
-├── frontend/               # Frontend React app
-│   ├── src/
-│   │   ├── components/     # React components
-│   │   │   ├── layout/     # Layout components
-│   │   │   ├── task/       # Task-related components
-│   │   │   └── ui/         # Reusable UI components
-│   │   ├── hooks/          # Custom hooks
-│   │   ├── pages/          # Page components
-│   │   ├── services/       # API services
-│   │   ├── store/          # Redux store with persistence
-│   │   ├── types/          # TypeScript types
-│   │   └── utils/          # Utility functions
-│   ├── __tests__/          # Test files
-│   ├── env.development     # Development environment
-│   ├── env.production      # Production environment
-│   ├── env.example         # Environment template
-│   ├── Dockerfile          # Docker configuration
-│   ├── vercel.json         # Vercel deployment config
-│   └── package.json
-├── .github/workflows/      # GitHub Actions
-│   └── deploy.yml          # Main deployment workflow
-├── docker-compose.yml      # Docker Compose configuration
-├── railway.json            # Railway project configuration
-├── vercel.json             # Vercel project configuration
-└── README.md
-```
+## 📁 Project Structure (Layered architecture)
 
+task-manager-app/
+├── backend/ # Backend API
+│ ├── src/
+│ │ ├── config/ # Configuration files
+│ │ ├── controllers/ # Route controllers
+│ │ ├── middlewares/ # Express middlewares
+│ │ ├── models/ # Mongoose models
+│ │ ├── routes/ # API routes
+│ │ ├── schemas/ # Validation schemas
+│ │ ├── services/ # Business logic
+│ │ └── utils/ # Utility functions
+│ ├── tests/ # Test files
+│ ├── env.development # Development environment
+│ ├── env.production # Production environment
+│ ├── env.example # Environment template
+│ ├── Dockerfile # Docker configuration
+│ ├── railway.toml # Railway deployment config
+│ └── package.json
+├── frontend/ # Frontend React app
+│ ├── src/
+│ │ ├── components/ # React components
+│ │ │ ├── layout/ # Layout components
+│ │ │ ├── task/ # Task-related components
+│ │ │ └── ui/ # Reusable UI components
+│ │ ├── hooks/ # Custom hooks
+│ │ ├── pages/ # Page components
+│ │ ├── services/ # API services
+│ │ ├── store/ # Redux store with persistence
+│ │ ├── types/ # TypeScript types
+│ │ └── utils/ # Utility functions
+│ ├── tests/ # Test files
+│ ├── env.development # Development environment
+│ ├── env.production # Production environment
+│ ├── env.example # Environment template
+│ ├── Dockerfile # Docker configuration
+│ ├── vercel.json # Vercel deployment config
+│ └── package.json
+├── .github/workflows/ # GitHub Actions
+│ └── deploy.yml # Main deployment workflow
+├── docker-compose.yml # Docker Compose configuration
+├── railway.json # Railway project configuration
+├── vercel.json # Vercel project configuration
+└── README.md
 
 
 
