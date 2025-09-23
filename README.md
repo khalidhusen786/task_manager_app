@@ -202,7 +202,6 @@ task-manager-app/
 ├── railway.json            # Railway project configuration
 ├── vercel.json             # Vercel project configuration
 └── README.md
-
 ```
 
 
