@@ -204,6 +204,9 @@ task-manager-app/
 └── README.md
 ```
 
+
+
+
 ## 🔒 Security Features
 
 - **JWT Authentication**: Secure token-based authentication
